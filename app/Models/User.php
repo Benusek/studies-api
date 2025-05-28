@@ -46,4 +46,59 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Множество пользователей могут иметь одну роль
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function hasRole($roles)
+    {
+        return in_array($this->role->code, $roles);
+    }
+
+    /**
+     * Один пользователь может иметь многих подписчиков
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function subscribers() {
+        return $this->hasMany(Subscribe::class, 'user_id');
+    }
+
+    /**
+     * Один пользователь может быть подписан на многих
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function subscribe() {
+        return $this->hasMany(Subscribe::class, 'subscriber_id');
+    }
+
+    /**
+     * Один пользователь может иметь множество видео
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function videos() {
+        return $this->hasMany(Video::class);
+    }
+
+    /**
+     * Один пользователь может иметь множество плейлистов
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function playlists() {
+        return $this->hasMany(Playlist::class);
+    }
+
+    /**
+     * Один пользователь может отправить множество жалоб
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function reports()
+    {
+        return $this->hasMany(Report::class);
+    }
 }
