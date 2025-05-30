@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AnswerAddRequest;
+use App\Http\Requests\CommentAddRequest;
+use App\Http\Requests\CommentChangeRequest;
+use App\Http\Requests\CommentDeleteRequest;
 use App\Models\Comment;
 use Illuminate\Http\Request;
 
@@ -20,7 +24,7 @@ class CommentController extends Controller
      * Добавление комментария к видео
      * @return string
      */
-    public function store() {
+    public function store(CommentAddRequest $request) {
         return 'store comment';
     }
 
@@ -28,7 +32,7 @@ class CommentController extends Controller
      * Изменение комментария
      * @return string
      */
-    public function update()
+    public function update(CommentChangeRequest $request)
     {
         return "update comment";
     }
@@ -37,7 +41,7 @@ class CommentController extends Controller
      * Добавление подкомментария к комментарию
      * @return string
      */
-    public function store_answer()
+    public function store_answer(AnswerAddRequest $request)
     {
         return "store comment";
     }
@@ -46,7 +50,7 @@ class CommentController extends Controller
      * Удаление комментария
      * @return string
      */
-    public function destroy()
+    public function destroy(CommentDeleteRequest $request, Comment $comment)
     {
         return "destroy comment";
     }

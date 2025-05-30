@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -19,6 +20,12 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'api_token',
+        'login',
+        'surname',
+        'patronymic',
+        'email',
+        'photo_file',
         'password',
     ];
 
@@ -30,6 +37,8 @@ class User extends Authenticatable
     protected $hidden = [
         'role_id',
         'password',
+        'email',
+        'email_verified_at',
         'patronymic',
         'surname',
         'photo_file',
@@ -100,5 +109,20 @@ class User extends Authenticatable
     public function reports()
     {
         return $this->hasMany(Report::class);
+    }
+
+    public function generateToken()
+    {
+        $this->update([
+            'api_token' => Str::random(25)
+        ]);
+        return $this->api_token;
+    }
+
+    public function logout()
+    {
+        $this->update([
+            'api_token' => null
+        ]);
     }
 }

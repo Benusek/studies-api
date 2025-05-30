@@ -2,7 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PlaylistAddRequest;
+use App\Http\Requests\PlaylistDeleteRequest;
+use App\Http\Requests\PrivatePlaylistRequest;
+use App\Http\Requests\PublicPlaylistRequest;
+use App\Http\Requests\VideoAddPlaylistRequest;
+use App\Http\Requests\VideoDeletePlaylistRequest;
 use App\Models\Playlist;
+use App\Models\Video;
 use Illuminate\Http\Request;
 
 class PlaylistController extends Controller
@@ -20,7 +27,7 @@ class PlaylistController extends Controller
      * Создание своего плейлиста
      * @return string
      */
-    public function store()
+    public function store(PlaylistAddRequest $request)
     {
         return "store playlist";
     }
@@ -29,7 +36,7 @@ class PlaylistController extends Controller
      * Добавление видео в плейлист
      * @return string
      */
-    public function store_video()
+    public function store_video(VideoAddPlaylistRequest $request, Playlist $playlist, Video $video)
     {
         return "store video";
     }
@@ -47,7 +54,7 @@ class PlaylistController extends Controller
      * Изменение статус плейлиста на публичный
      * @return string
      */
-    public function public()
+    public function public(PublicPlaylistRequest $request, Playlist $playlist)
     {
         return "public playlist";
     }
@@ -56,7 +63,7 @@ class PlaylistController extends Controller
      * Изменение статус плейлиста на привытный
      * @return string
      */
-    public function private()
+    public function private(PrivatePlaylistRequest $request, Playlist $playlist)
     {
         return "private playlist";
     }
@@ -65,7 +72,7 @@ class PlaylistController extends Controller
      * Удаление плейлиста
      * @return string
      */
-    public function destroy()
+    public function destroy(PlaylistDeleteRequest $request, Playlist $playlist)
     {
         return "destroy playlist";
     }
@@ -74,7 +81,7 @@ class PlaylistController extends Controller
      * Удаление видео из плейлиста
      * @return string
      */
-    public function destroy_video()
+    public function destroy_video(VideoDeletePlaylistRequest $request, Playlist $playlist, Video $video)
     {
         return "destroy video";
     }

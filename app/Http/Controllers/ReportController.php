@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReportAddRequest;
 use App\Models\Report;
+use App\Models\Video;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
@@ -20,8 +22,9 @@ class ReportController extends Controller
      * Добавление жалобы
      * @return string
      */
-    public function store()
+    public function store(ReportAddRequest $request, Video $video)
     {
+
         return "store report";
     }
 
