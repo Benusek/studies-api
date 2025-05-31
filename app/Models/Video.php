@@ -36,4 +36,20 @@ class Video extends Model
     {
         return $this->hasMany(TagVideo::class);
     }
+
+    /**
+     * Одно видео может иметь множество комментариев
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function comments() {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
+     * Одно видео может иметь множество жалоб
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function reports() {
+        return $this->hasMany(ReportVideo::class);
+    }
 }

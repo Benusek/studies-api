@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\FollowRequest;
+use App\Http\Requests\UnfollowRequest;
 use App\Models\Subscribe;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class SubscribeController extends Controller
@@ -20,7 +23,7 @@ class SubscribeController extends Controller
      * Подписаться на пользователя
      * @return string
      */
-    public function store()
+    public function store(FollowRequest $request, User $user)
     {
         return "store";
     }
@@ -29,7 +32,7 @@ class SubscribeController extends Controller
      * Отписаться от пользователя
      * @return string
      */
-    public function destroy()
+    public function destroy(UnfollowRequest $request, User $user)
     {
         return "destroy";
     }

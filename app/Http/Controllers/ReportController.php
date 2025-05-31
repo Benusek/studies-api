@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ReportAddRequest;
+use App\Http\Requests\ReportDeleteRequest;
 use App\Models\Report;
+use App\Models\ReportVideo;
 use App\Models\Video;
 use Illuminate\Http\Request;
 
@@ -15,14 +17,14 @@ class ReportController extends Controller
      */
     public function index()
     {
-        return Report::all();
+        return ReportVideo::all();
     }
 
     /**
      * Добавление жалобы
      * @return string
      */
-    public function store(ReportAddRequest $request, Video $video)
+    public function store(ReportAddRequest $request, Video $video, Report $report)
     {
 
         return "store report";
@@ -32,7 +34,7 @@ class ReportController extends Controller
      * Удаление жалобы
      * @return string
      */
-    public function destroy()
+    public function destroy(ReportVideo $report)
     {
         return "destroy report";
     }

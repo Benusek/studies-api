@@ -16,12 +16,8 @@ class TagAddRequest extends ApiRequest
         //Пользователь не может добавить тег не к своему видео
         parent::action($this->video, 'add tags', 'to this video');
 
-        //Пользователь не может добавить уже содержащий тег видео,
-        $tag = TagVideo::where([
-            'video_id' => $this->video->id,
-            'tag_id' => $this->tag->id
-        ])->first();
-        if ($tag !== null) {
+        //Пользователь не может добавить уже содержащий тег видео
+        if ($this->video->tags->where('tag_id', '=', $this->tag->id)->first() !== null) {
             throw new ApiException(402, 'Video already exists this tag');
         }
 

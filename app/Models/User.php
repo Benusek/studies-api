@@ -108,7 +108,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function reports()
     {
-        return $this->hasMany(Report::class);
+        return $this->hasMany(ReportVideo::class);
     }
 
     public function generateToken()

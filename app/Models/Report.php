@@ -8,22 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class Report extends Model
 {
     use HasFactory;
-
-    /**
-     * Множество жалоб может быть от одного пользователя
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Множество жалоб может быть адресовано одному видео
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function video()
-    {
-        return $this->belongsTo(Video::class);
-    }
+    public $timestamps = false;
 }

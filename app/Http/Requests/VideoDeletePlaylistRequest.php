@@ -15,11 +15,7 @@ class VideoDeletePlaylistRequest extends ApiRequest
     {
         parent::action($this->playlist,'delete', 'video from this playlist');
         //Пользователь не может удалять видео, которое не находится в плейлисте
-        $video = PlaylistVideo::where([
-            'video_id' => $this->video->id,
-            'playlist_id' => $this->playlist->id
-        ])->first();
-        if ($video === null) {
+        if ($this->playlist->videos->where('id', '=', $this->video->id)->first() === null) {
             throw new ApiException(402, "This video don't exists in this playlist");
         }
 

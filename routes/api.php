@@ -46,7 +46,7 @@ Route::middleware('role:user')->group(function () {
         Route::post('/', [VideoController::class, 'store']);
         Route::patch('/{video}/update', [VideoController::class, 'update']);
         Route::delete('/{video}', [VideoController::class, 'destroy']);
-        Route::post('/{video}/report', [ReportController::class, 'store']);
+        Route::get('/{video}/report/{report}', [ReportController::class, 'store']);
     });
 
     Route::prefix('user')->group(function () {
