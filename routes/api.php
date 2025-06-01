@@ -45,12 +45,12 @@ Route::middleware('role:user')->group(function () {
         Route::delete('/{video}/tag/{tag}', [VideoController::class, 'destroy_tag']);
         Route::post('/', [VideoController::class, 'store']);
         Route::post('/{video}/update', [VideoController::class, 'update']);
-        Route::delete('/{video}', [VideoController::class, 'destroy']);
         Route::get('/{video}/report/{report}', [ReportController::class, 'store']);
     });
 
     Route::prefix('user')->group(function () {
         Route::get('/{user}', [UserController::class, 'show']);
+        Route::post('/{user}', [UserController::class, 'update']);
         Route::get('/{user}/follow', [SubscribeController::class, 'store']);
         Route::delete('/{user}/unfollow', [SubscribeController::class, 'destroy']);
     });
@@ -63,6 +63,9 @@ Route::middleware('role:user')->group(function () {
 
     Route::prefix('playlist')->group(function () {
         Route::post('/', [PlaylistController::class, 'store']);
+        Route::patch('/{playlist}', [PlaylistController::class, 'update']);
+        Route::get('/{playlist}/collection', [PlaylistController::class, 'store_other_playlist']);
+        Route::delete('/{playlist}/collection', [PlaylistController::class, 'destroy_other_playlist']);
         Route::get('/{playlist}/video/{video}', [PlaylistController::class, 'store_video']);
         Route::get('/{playlist}/public', [PlaylistController::class, 'public']);
         Route::get('/{playlist}/private', [PlaylistController::class, 'private']);
@@ -72,10 +75,16 @@ Route::middleware('role:user')->group(function () {
 });
     //->middleware('verified');
 
+Route::middleware('role:user|moderator')->group(function () {
+    Route::prefix('video')->group(function () {
+        Route::delete('/{video}', [VideoController::class, 'destroy']);
+    });
+});
+
 Route::middleware('role:moderator')->group(function () {
     Route::prefix('report')->group(function () {
         Route::get('/', [ReportController::class, 'index']);
-        Route::delete('/{report}/complete', [ReportController::class, 'destroy']);
+        Route::delete('/{report}', [ReportController::class, 'destroy']);
     });
 
     Route::get('user', [UserController::class, 'index']);

@@ -10,6 +10,13 @@ class CommentChangeRequest extends ApiRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
+
+    public function authorize(): bool
+    {
+        parent::action($this->comment->user_id, 'update', 'this comment');
+        return true;
+    }
+
     public function rules(): array
     {
         return [

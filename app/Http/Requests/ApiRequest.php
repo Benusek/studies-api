@@ -30,7 +30,7 @@ class ApiRequest extends FormRequest
 
     public function action(object $object, $method, $obj_message) {
         //Пользователь не может удалить чужое видео
-        if ($object->user_id !== $this->user()->id) {
+        if ($object->user_id !== $this->user('api')->id) {
             throw new ApiException(402, "You are not allowed to {$method} {$obj_message}.");
         }
     }
@@ -54,6 +54,12 @@ class ApiRequest extends FormRequest
         }
     }
 
+    public function private($object, $message_obj) {
+        //Пользователь не может ... чужое приватное видео
+        if ($object->public === 0  && $object->user_id !== $this->user('api')->id) {
+            throw new ApiException(402, "This {$message_obj} is not public");
+        }
+    }
 
     protected function failedValidation(Validator $validator)
     {

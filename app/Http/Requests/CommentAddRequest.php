@@ -12,13 +12,7 @@ class CommentAddRequest extends ApiRequest
      */
     public function authorize(): bool
     {
-        //Пользователь не может оставлять комментарий на приватное видео
-        $video = Video::where('id', '=', $this->input('video_id'))->first();
-        if ($video !== null) {
-            if ($video->public === 0) {
-                throw new ApiException(402, 'This video is not public');
-            }
-        }
+        parent::private($this->video, 'video');
         return true;
     }
 

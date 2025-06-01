@@ -33,4 +33,12 @@ class Playlist extends Model
     {
         return $this->hasManyThrough(Video::class, PlaylistVideo::class, 'playlist_id', 'id', 'id', 'video_id');
     }
+
+    public function playlist() {
+        return $this->belongsTo(Playlist::class);
+    }
+
+    public function added() {
+        return $this->hasMany(UserPlaylist::class, 'playlist_id');
+    }
 }

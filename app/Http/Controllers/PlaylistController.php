@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\OtherPlaylistAddRequest;
+use App\Http\Requests\OtherPlaylistDeleteRequest;
 use App\Http\Requests\PlaylistAddRequest;
 use App\Http\Requests\PlaylistDeleteRequest;
+use App\Http\Requests\PlaylistUpdateRequest;
 use App\Http\Requests\PrivatePlaylistRequest;
 use App\Http\Requests\PublicPlaylistRequest;
 use App\Http\Requests\VideoAddPlaylistRequest;
@@ -14,20 +17,13 @@ use App\Models\Playlist;
 use App\Models\PlaylistVideo;
 use App\Models\Subscribe;
 use App\Models\User;
+use App\Models\UserPlaylist;
 use App\Models\Video;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PlaylistController extends Controller
 {
-    /**
-     * Вывод своих плейлистов
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function index()
-    {
-        return Playlist::all();
-    }
 
     /**
      * Создание своего плейлиста
@@ -37,12 +33,7 @@ class PlaylistController extends Controller
     public function store(PlaylistAddRequest $request)
     {
         $playlist = Playlist::create(['user_id' => Auth::id()] + $request->all());
-        return response()->json([
-            'data' => [
-                'id' => $playlist->id,
-                'status' => 'created',
-            ]
-        ]);
+        return parent::response($playlist, 'created');
     }
 
     /**
@@ -58,12 +49,7 @@ class PlaylistController extends Controller
             'playlist_id' => $playlist->id,
             'video_id' => $video->id
         ]);
-        return response()->json([
-            'data' => [
-                'id' => $playlist->id,
-                'status' => 'added',
-            ]
-        ]);
+        return parent::response($playlist, 'added');
     }
 
     /**
@@ -74,13 +60,28 @@ class PlaylistController extends Controller
      */
     public function show(Request $request, User $user)
     {
+        $my_playlists = $request->user('api')->playlists;
+        $collection_playlists = Playlist::whereIn('id', $request->user('api')->other_playlists->pluck('playlist_id'))->get();
+        $all = $my_playlists->concat($collection_playlists);
         if ($request->user('api')->id === $user->id) {
-            return PlaylistResource::collection(Playlist::where(['user_id' => $user->id])->get());
+            return PlaylistResource::collection($all);
         }
         return PlaylistResource::collection(Playlist::where([
             'user_id' => $user->id,
             'public' => 1
         ])->get());
+    }
+
+    /**
+     * Обновление заголовка
+     * @param PlaylistUpdateRequest $request
+     * @param Playlist $playlist
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(PlaylistUpdateRequest $request, Playlist $playlist)
+    {
+        $playlist->update($request->all());
+        return parent::response($playlist, 'updated');
     }
 
     /**
@@ -95,34 +96,46 @@ class PlaylistController extends Controller
     }
 
     /**
-     * Изменение статус плейлиста на привытный
+     * Изменение статус плейлиста на приватный
      * @param PrivatePlaylistRequest $request
      * @param Playlist $playlist
      * @return \Illuminate\Http\JsonResponse
      */
     public function private(PrivatePlaylistRequest $request, Playlist $playlist)
     {
+        UserPlaylist::where('playlist_id', '=', $playlist->id)->delete();
         return parent::status($playlist, 0);
+    }
+
+    public function store_other_playlist(OtherPlaylistAddRequest $request, Playlist $playlist)
+    {
+        UserPlaylist::create(['user_id' => $request->user('api')->id, 'playlist_id' => $playlist->id]);
+        return parent::response($playlist, 'added to collection');
+    }
+
+    public function destroy_other_playlist(OtherPlaylistDeleteRequest $request, Playlist $playlist)
+    {
+        UserPlaylist::where(['user_id' => $request->user('api')->id, 'playlist_id' => $playlist->id])->delete();
+        return parent::response($playlist, 'deleted from collection');
     }
 
     /**
      * Удаление плейлиста
-     * @return string
+     * @param PlaylistDeleteRequest $request
+     * @param Playlist $playlist
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(PlaylistDeleteRequest $request, Playlist $playlist)
     {
-        $playlist->delete();
-        return response()->json([
-            'data' => [
-                'id' => $playlist->id,
-                'status' => 'deleted',
-            ]
-        ]);
+        return parent::delete($playlist);
     }
 
     /**
      * Удаление видео из плейлиста
-     * @return string
+     * @param VideoDeletePlaylistRequest $request
+     * @param Playlist $playlist
+     * @param Video $video
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy_video(VideoDeletePlaylistRequest $request, Playlist $playlist, Video $video)
     {
@@ -130,12 +143,6 @@ class PlaylistController extends Controller
             'playlist_id' => $playlist->id,
             'video_id' => $video->id
         ])->delete();
-        return response()->json([
-            'data' => [
-                'id' => $playlist->id,
-                'video_id' => $video->id,
-                'status' => 'deleted',
-            ]
-        ]);
+        return parent::response($video, 'deleted from playlist');
     }
 }

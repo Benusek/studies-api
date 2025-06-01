@@ -19,6 +19,7 @@ class PlaylistResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'public' => $this->public,
+            'videos' => $this->videos->count() === 0 ? null : VideoResource::collection($this->videos),
             'created_at' => $this->photo_file,
         ];
     }

@@ -10,6 +10,8 @@ use App\Http\Requests\VideoAddRequest;
 use App\Http\Requests\VideoDeleteRequest;
 use App\Http\Requests\VideoUpdateRequest;
 use App\Http\Resources\VideoResource;
+use App\Models\Playlist;
+use App\Models\PlaylistVideo;
 use App\Models\Tag;
 use App\Models\TagVideo;
 use App\Models\User;
@@ -57,6 +59,7 @@ class VideoController extends Controller
      */
     public function private(PrivateVideoRequest $request, Video $video)
     {
+        PlaylistVideo::where('video_id', '=', $video->id)->whereIn('playlist_id',  Playlist::where('user_id', '!=', $request->user('api')->id)->pluck('id'))->delete();
         return parent::status($video, 0);
     }
 
@@ -81,14 +84,9 @@ class VideoController extends Controller
         $video = Video::create([
                 'photo_file' => $request->photo_file ? $request->photo_file->store('video_previews') : null,
                 'video_file' => $request->video_file ? $request->video_file->store('user_videos') : null,
-                'user_id' => $request->user()->id] + $request->all()
+                'user_id' => $request->user('api')->id] + $request->all()
         );
-        return response()->json([
-            'data' => [
-                'id' => $video->id,
-                'status' => 'created'
-            ]
-        ])->setStatusCode(201, 'Created');
+        return parent::response($video, 'created')->setStatusCode(201, 'Created');
     }
 
     /**
@@ -100,12 +98,7 @@ class VideoController extends Controller
     public function update(VideoUpdateRequest $request, Video $video)
     {
         $video->update($request->all());
-        return response()->json([
-            'data' => [
-                'id' => $video->id,
-                'status' => 'updated'
-            ]
-        ])->setStatusCode(201, 'Updated');
+        return parent::response($video, 'updated')->setStatusCode(201, 'Updated');
     }
 
     /**
@@ -121,13 +114,7 @@ class VideoController extends Controller
             'tag_id' => $tag->id,
             'video_id' => $video->id
         ]);
-        return response()->json([
-            'data' => [
-                'id' => $video->id,
-                'tag_id' => $tag->id,
-                'status' => 'added'
-            ]
-        ]);
+        return parent::response($tag, 'added to video');
     }
 
     /**
@@ -143,13 +130,7 @@ class VideoController extends Controller
             'tag_id' => $tag->id,
             'video_id' => $video->id
         ])->delete();
-        return response()->json([
-            'data' => [
-                'id' => $video->id,
-                'tag_id' => $tag->id,
-                'status' => 'deleted'
-            ]
-        ]);
+        return parent::response($tag, 'deleted from video');
     }
 
 
@@ -161,12 +142,6 @@ class VideoController extends Controller
      */
     public function destroy(VideoDeleteRequest $request, Video $video)
     {
-        $video->delete();
-        return response()->json([
-            'data' => [
-                'video_id' => $video->id,
-                'status' => 'deleted'
-            ]
-        ]);
+        return parent::delete($video);
     }
 }

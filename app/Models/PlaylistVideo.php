@@ -22,4 +22,9 @@ class PlaylistVideo extends Model
     {
         return $this->belongsTo(Video::class);
     }
+
+
+    public function playlist() {
+        return $this->belongsTo(Playlist::class);
+    }
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\UnfollowRequest;
 use App\Models\Subscribe;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class SubscribeController extends Controller
 {
@@ -21,14 +22,9 @@ class SubscribeController extends Controller
     {
         Subscribe::create([
             'user_id' => $user->id,
-            'subscriber_id' => $request->user('api')->id
+            'subscriber_id' => Auth::id()
         ]);
-        return response()->json([
-            'data' => [
-                'id' => $user->id,
-                'status' => 'follow',
-            ]
-        ]);
+        return parent::response($user, 'follow');
     }
 
     /**
@@ -41,13 +37,8 @@ class SubscribeController extends Controller
     {
         Subscribe::where([
             'user_id' => $user->id,
-            'subscriber_id' => $request->user('api')->id
+            'subscriber_id' => Auth::id()
         ])->delete();
-        return response()->json([
-            'data' => [
-                'id' => $user->id,
-                'status' => 'unfollow',
-            ]
-        ]);
+        return parent::response($user, 'unfollow');
     }
 }

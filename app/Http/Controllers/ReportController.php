@@ -10,6 +10,7 @@ use App\Models\ReportVideo;
 use App\Models\Subscribe;
 use App\Models\Video;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
@@ -34,15 +35,9 @@ class ReportController extends Controller
         ReportVideo::create([
             'video_id' => $video->id,
             'report_id' => $report->id,
-            'user_id' => $request->user('api')->id
+            'user_id' => Auth::id()
         ]);
-
-        return response()->json([
-            'data' => [
-                'id' => $video->id,
-                'status' => 'reported',
-            ]
-        ]);
+        return parent::response($video, 'reported');
     }
 
     /**
@@ -52,12 +47,6 @@ class ReportController extends Controller
      */
     public function destroy(ReportVideo $report)
     {
-        $report->delete();
-        return response()->json([
-            'data' => [
-                'id' => $report->id,
-                'status' => 'deleted',
-            ]
-        ]);
+        return parent::delete($report);
     }
 }

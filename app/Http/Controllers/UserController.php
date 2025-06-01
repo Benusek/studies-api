@@ -6,6 +6,7 @@ use App\Exceptions\ApiException;
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
 use App\Http\Requests\UserShowRequest;
+use App\Http\Requests\UserUpdateRequest;
 use App\Http\Resources\ChannelResource;
 use App\Http\Resources\UserResource;
 use App\Models\Category;
@@ -33,6 +34,12 @@ class UserController extends Controller
         return UserResource::collection(User::all());
     }
 
+    /**
+     * Просмотр пользователя
+     * @param UserShowRequest $request
+     * @param User $user
+     * @return UserResource
+     */
     public function show(UserShowRequest $request, User $user) {
         return UserResource::make($user);
     }
@@ -85,11 +92,12 @@ class UserController extends Controller
             'photo_file' => $request->photo_file ? $request->photo_file->store('user_photos') : null] + $request->all()
         );
         event(new Registered($user));
-        return response()->json([
-            'data' => [
-                'id' => $user->id,
-                'status' => 'created'
-            ]
-        ])->setStatusCode(201, 'Created');
+        return parent::response($user, 'created')->setStatusCode(201, 'Created');
+    }
+
+    public function update(UserUpdateRequest $request, User $user)
+    {
+        $user->update(request()->all());
+        return parent::response($user, 'updated');
     }
 }

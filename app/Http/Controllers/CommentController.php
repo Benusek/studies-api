@@ -6,11 +6,14 @@ use App\Http\Requests\AnswerAddRequest;
 use App\Http\Requests\CommentAddRequest;
 use App\Http\Requests\CommentChangeRequest;
 use App\Http\Requests\CommentDeleteRequest;
+use App\Http\Requests\CommentShowRequest;
 use App\Http\Resources\CommentResource;
 use App\Models\Comment;
+use App\Models\CommentAnswer;
 use App\Models\ReportVideo;
 use App\Models\Video;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
 {
@@ -19,59 +22,60 @@ class CommentController extends Controller
      * @param Video $video
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(Video $video)
+    public function index(CommentShowRequest $request, Video $video)
     {
         return CommentResource::collection($video->comments);
     }
 
     /**
      * Добавление комментария к видео
-     * @return string
+     * @param CommentAddRequest $request
+     * @param Video $video
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(CommentAddRequest $request, Video $video) {
         Comment::create([
             'video_id' => $video->id,
-            'user_id' => $request->user('api')->id
+            'user_id' => $request->user('api')->id,
         ] + $request->all());
-
-        return response()->json([
-            'data' => [
-                'id' => $video->id,
-                'status' => 'commented',
-            ]
-        ]);
+        return parent::response($video, 'commented');
     }
 
     /**
      * Изменение комментария
-     * @return string
+     * @param CommentChangeRequest $request
+     * @param Comment $comment
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(CommentChangeRequest $request, Comment $comment)
     {
         $comment->update($request->all());
-        return response()->json([
-            'data' => [
-                'id' => $comment->id,
-                'status' => 'changed',
-            ]
-        ]);
+        return parent::response($comment, 'changed');
     }
 
     /**
-     * Добавление подкомментария к комментарию
-     * @return string
+     * Добавление ответа к комментарию
+     * @param AnswerAddRequest $request
+     * @param Comment $comment
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store_answer(AnswerAddRequest $request)
+    public function store_answer(AnswerAddRequest $request, Comment $comment)
     {
-        return "store comment";
+        CommentAnswer::create( $request->all() + [
+                'user_id' => Auth::id(),
+                'comment_id' => $comment->id
+            ]);
+        return parent::response($comment, 'answered');
     }
 
     /**
      * Удаление комментария
-     * @return string
+     * @param CommentDeleteRequest $request
+     * @param Comment $comment
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Foundation\Application|\Illuminate\Http\Response
      */
     public function destroy(CommentDeleteRequest $request, Comment $comment)
     {
-        return "destroy comment";
+        return parent::delete($comment);
     }
 }

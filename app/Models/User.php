@@ -103,6 +103,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Один пользователь может добавить себе множество плейлистов
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function other_playlists() {
+        return $this->hasMany(UserPlaylist::class);
+    }
+
+    /**
      * Один пользователь может отправить множество жалоб
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */

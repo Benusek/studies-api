@@ -9,6 +9,10 @@ class VideoDeleteRequest extends ApiRequest
      */
     public function authorize(): bool
     {
+        if ($this->user('api')->role->code === 'moderator') {
+            return true;
+        }
+
         parent::action($this->video,'delete', 'this video');
         return true;
     }

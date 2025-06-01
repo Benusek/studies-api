@@ -15,7 +15,7 @@ class VideoAddRequest extends ApiRequest
             'title' => 'required|string',
             'description' => 'required|string',
             'photo_file' => 'image|mimes:jpeg,png,jpg|dimensions:ratio=16/9,min_height=720,min_width=1280',
-            'video_file' => 'required|video|mimes:mp4,mov,ogg,webm'
+            'video_file' => 'required|file|mimes:mp4,mov,ogg,webm'
         ];
     }
 }

@@ -11,6 +11,16 @@ class FollowRequest extends ApiRequest
      */
     public function authorize(): bool
     {
+        //Пользователь не может подписаться на самого себя
+        if ($this->user()->id === $this->user->id) {
+            throw new ApiException(402, 'You are not allowed to follow yourself.');
+        }
+
+        //Пользователь не может подписаться на модератора
+        if ($this->user->role->code === 'moderator') {
+            throw new ApiException(402, 'You are not allowed to follow this users.');
+        }
+
         //Пользователь не может отслеживать канал, если уже подписан на него
         if ($this->user()->subscribe->where('user_id', '=', $this->user->id)->first() !== null) {
             throw new ApiException(402, 'You already subscribed to this channel');

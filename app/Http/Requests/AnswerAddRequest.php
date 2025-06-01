@@ -4,6 +4,15 @@ namespace App\Http\Requests;
 
 class AnswerAddRequest extends ApiRequest
 {
+    /**
+     * @return bool
+     */
+    public function authorize(): bool
+    {
+        //Пользователь не может оставлять ответ к комментарию приватного видео
+        parent::private($this->comment->video, 'video');
+        return true;
+    }
 
     /**
      * Get the validation rules that apply to the request.
@@ -13,7 +22,6 @@ class AnswerAddRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'comment_id' => 'required|integer|exists:comments,id',
             'text' => 'required|string'
         ];
     }

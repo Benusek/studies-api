@@ -9,6 +9,12 @@ class CommentAnswer extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'comment_id',
+        'user_id',
+        'text'
+    ];
+
     /**
      * Множество ответов могут быть написаны к одному комментарию
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

@@ -11,8 +11,8 @@ class CommentDeleteRequest extends ApiRequest
      */
     public function authorize(): bool
     {
-//        Пользователь не может удалять чужой комментарий, если он не написан под его видео
-        if ($this->user()->id !== $this->user()->id && $this->user()->id !== $this->comment->video->user_id) {
+        //Пользователь не может удалять чужой комментарий, если он не написан под его видео
+        if ($this->user()->id !== $this->comment->user_id && $this->user()->id !== $this->comment->video->user_id) {
             throw new ApiException(402, 'You are not allowed to delete this comments');
         }
 
