@@ -2,9 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Exceptions\ApiException;
-use Illuminate\Foundation\Http\FormRequest;
-
 class PrivateVideoRequest extends ApiRequest
 {
     /**

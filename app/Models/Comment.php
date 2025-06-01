@@ -9,6 +9,11 @@ class Comment extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'user_id',
+        'video_id',
+        'text'
+    ];
     /**
      * Множество комментарием могут быть написаны один пользователем
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

@@ -3,8 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Exceptions\ApiException;
-use App\Models\TagVideo;
-use Illuminate\Foundation\Http\FormRequest;
 
 class TagAddRequest extends ApiRequest
 {

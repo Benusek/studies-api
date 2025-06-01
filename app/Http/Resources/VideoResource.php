@@ -19,9 +19,10 @@ class VideoResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
+            'public' => $this->public,
             'photo_file' => $this->photo_file,
             'video_file' => $this->video_file,
-            'user' => $this->user,
+            'user' => ChannelResource::make($this->user),
             'created_at' => $this->created_at
         ];
     }

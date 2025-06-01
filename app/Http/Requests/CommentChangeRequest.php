@@ -2,8 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
 class CommentChangeRequest extends ApiRequest
 {
 
@@ -15,7 +13,6 @@ class CommentChangeRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'comment_id' => 'required|integer|exists:comments,id',
             'text' => 'required|string'
         ];
     }

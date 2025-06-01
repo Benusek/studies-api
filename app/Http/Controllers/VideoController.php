@@ -11,62 +11,81 @@ use App\Http\Requests\VideoDeleteRequest;
 use App\Http\Requests\VideoUpdateRequest;
 use App\Http\Resources\VideoResource;
 use App\Models\Tag;
+use App\Models\TagVideo;
+use App\Models\User;
 use App\Models\Video;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VideoController extends Controller
 {
     /**
      * Просмотр всех видео
+     * @param Request $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index()
+    public function index(Request $request)
     {
-        return VideoResource::collection(Video::all());
+        return VideoResource::collection(Video::where([
+            'public' => 1
+        ])->orWhere(['user_id' => $request->user('api')->id])->get());
     }
 
+
     /**
-     * Просмотр своих видео
-     * @return string
+     * Просмотр видео пользователя
+     * @param Request $request
+     * @param User $user
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function show()
+    public function show(Request $request, User $user)
     {
-        //        return (User::where("id", "=", "1")->first()->videos);
-        return "show_videos";
+        if ($request->user('api')->id === $user->id) {
+            return VideoResource::collection(Video::where(['user_id' => $user->id])->get());
+        }
+        return VideoResource::collection(Video::where([
+            'user_id' => $user->id,
+            'public' => 1
+        ])->get());
     }
 
     /**
      * Изменение статуса видео на приватное
-     * @return string
+     * @param PrivateVideoRequest $request
+     * @param Video $video
+     * @return \Illuminate\Http\JsonResponse
      */
     public function private(PrivateVideoRequest $request, Video $video)
     {
-        return "private";
+        return parent::status($video, 0);
     }
 
     /**
      * Изменение статуса видео на публичное
-     * @return string
+     * @param PublicVideoRequest $request
+     * @param Video $video
+     * @return \Illuminate\Http\JsonResponse
      */
     public function public(PublicVideoRequest $request, Video $video)
     {
-        return "public";
+        return parent::status($video, 1);
     }
 
     /**
      * Добавление видео
-     * @return string
+     * @param VideoAddRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(VideoAddRequest $request)
     {
-        $user = Video::create([
+        $video = Video::create([
                 'photo_file' => $request->photo_file ? $request->photo_file->store('video_previews') : null,
                 'video_file' => $request->video_file ? $request->video_file->store('user_videos') : null,
                 'user_id' => $request->user()->id] + $request->all()
         );
         return response()->json([
             'data' => [
-                'id' => $user->id,
+                'id' => $video->id,
                 'status' => 'created'
             ]
         ])->setStatusCode(201, 'Created');
@@ -74,20 +93,41 @@ class VideoController extends Controller
 
     /**
      * Изменение содержимого видео
-     * @return string
+     * @param VideoUpdateRequest $request
+     * @param Video $video
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(VideoUpdateRequest $request, Video $video)
     {
-        return "update";
+        $video->update($request->all());
+        return response()->json([
+            'data' => [
+                'id' => $video->id,
+                'status' => 'updated'
+            ]
+        ])->setStatusCode(201, 'Updated');
     }
 
     /**
      * Добавление тега к видео
-     * @return string
+     * @param TagAddRequest $request
+     * @param Video $video
+     * @param Tag $tag
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store_tag(TagAddRequest $request, Video $video, Tag $tag)
     {
-        return "add tag";
+        TagVideo::create([
+            'tag_id' => $tag->id,
+            'video_id' => $video->id
+        ]);
+        return response()->json([
+            'data' => [
+                'id' => $video->id,
+                'tag_id' => $tag->id,
+                'status' => 'added'
+            ]
+        ]);
     }
 
     /**
@@ -95,19 +135,38 @@ class VideoController extends Controller
      * @param TagDeleteRequest $request
      * @param Video $video
      * @param Tag $tag
-     * @return string
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy_tag(TagDeleteRequest $request, Video $video, Tag $tag)
     {
-        return "add tag";
+        TagVideo::where([
+            'tag_id' => $tag->id,
+            'video_id' => $video->id
+        ])->delete();
+        return response()->json([
+            'data' => [
+                'id' => $video->id,
+                'tag_id' => $tag->id,
+                'status' => 'deleted'
+            ]
+        ]);
     }
+
 
     /**
      * Удаление видео
-     * @return string
+     * @param VideoDeleteRequest $request
+     * @param Video $video
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(VideoDeleteRequest $request, Video $video)
     {
-        return "destroy";
+        $video->delete();
+        return response()->json([
+            'data' => [
+                'video_id' => $video->id,
+                'status' => 'deleted'
+            ]
+        ]);
     }
 }

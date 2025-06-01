@@ -3,10 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Exceptions\ApiException;
-use App\Models\PlaylistVideo;
-use App\Models\Video;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Foundation\Http\FormRequest;
 
 class VideoAddPlaylistRequest extends ApiRequest
 {

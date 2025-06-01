@@ -2,10 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Exceptions\ApiException;
-use App\Models\Video;
-use Illuminate\Foundation\Http\FormRequest;
-
 class UserRegisterRequest extends ApiRequest
 {
 

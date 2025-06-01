@@ -3,8 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Exceptions\ApiException;
-use App\Models\Report;
-use Illuminate\Foundation\Http\FormRequest;
 
 class ReportAddRequest extends ApiRequest
 {

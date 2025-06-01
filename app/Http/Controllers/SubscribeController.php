@@ -10,30 +10,44 @@ use Illuminate\Http\Request;
 
 class SubscribeController extends Controller
 {
-    /**
-     * Просмотр подписчиков пользователя
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function index()
-    {
-        return Subscribe::all();
-    }
 
     /**
      * Подписаться на пользователя
-     * @return string
+     * @param FollowRequest $request
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(FollowRequest $request, User $user)
     {
-        return "store";
+        Subscribe::create([
+            'user_id' => $user->id,
+            'subscriber_id' => $request->user('api')->id
+        ]);
+        return response()->json([
+            'data' => [
+                'id' => $user->id,
+                'status' => 'follow',
+            ]
+        ]);
     }
 
     /**
      * Отписаться от пользователя
-     * @return string
+     * @param UnfollowRequest $request
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(UnfollowRequest $request, User $user)
     {
-        return "destroy";
+        Subscribe::where([
+            'user_id' => $user->id,
+            'subscriber_id' => $request->user('api')->id
+        ])->delete();
+        return response()->json([
+            'data' => [
+                'id' => $user->id,
+                'status' => 'unfollow',
+            ]
+        ]);
     }
 }

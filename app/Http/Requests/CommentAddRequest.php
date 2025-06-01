@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Exceptions\ApiException;
 use App\Models\Video;
-use Illuminate\Foundation\Http\FormRequest;
 
 class CommentAddRequest extends ApiRequest
 {
@@ -31,7 +30,6 @@ class CommentAddRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'video_id' => 'required|exists:videos,id',
             'text' => 'required|string'
         ];
     }

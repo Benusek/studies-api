@@ -9,6 +9,11 @@ class Playlist extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'public',
+        'user_id',
+        'title'
+    ];
     /**
      * Множество плейлистов могут быть созданы одним пользователем
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

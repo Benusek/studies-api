@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Exceptions\ApiException;
-use App\Models\Video;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 

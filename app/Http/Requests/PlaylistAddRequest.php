@@ -2,8 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
 class PlaylistAddRequest extends ApiRequest
 {
     /**
@@ -14,8 +12,7 @@ class PlaylistAddRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            "title" => 'required|string',
-            'description' => 'string',
+            "title" => 'required|string'
         ];
     }
 }

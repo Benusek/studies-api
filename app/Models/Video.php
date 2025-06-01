@@ -17,7 +17,8 @@ class Video extends Model
         'description',
         'photo_file',
         'video_file',
-        'user_id'
+        'user_id',
+        'public'
     ];
     /**
      * Множество видео могут быть опубликованы одним пользователем

@@ -2,9 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Exceptions\ApiException;
-use Illuminate\Foundation\Http\FormRequest;
-
 class VideoUpdateRequest extends ApiRequest
 {
     /**
@@ -12,7 +9,6 @@ class VideoUpdateRequest extends ApiRequest
      */
     public function authorize(): bool
     {
-
         parent::action($this->video,'update', 'this video');
         return true;
     }

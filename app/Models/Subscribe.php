@@ -9,6 +9,11 @@ class Subscribe extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'user_id',
+        'subscriber_id'
+    ];
+
     /**
      * Пользователь может иметь множество подписок
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -16,6 +21,10 @@ class Subscribe extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function users() {
+        return $this->belongsToMany(User::class);
     }
 
     /**

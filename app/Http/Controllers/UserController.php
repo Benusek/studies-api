@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Exceptions\ApiException;
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
+use App\Http\Requests\UserShowRequest;
+use App\Http\Resources\ChannelResource;
+use App\Http\Resources\UserResource;
 use App\Models\Category;
 use App\Models\Comment;
 use App\Models\CommentAnswer;
 use App\Models\Playlist;
-use App\Models\Report;
 use App\Models\Subscribe;
 use App\Models\Tag;
 use App\Models\TagVideo;
@@ -18,23 +20,27 @@ use App\Models\Video;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
+
     /**
      * Просмотр всех пользователей
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function index()
     {
-        dd(Video::where('id', '=', '1')->first()->playlists);
-        return User::all();
+        return UserResource::collection(User::all());
+    }
+
+    public function show(UserShowRequest $request, User $user) {
+        return UserResource::make($user);
     }
 
     /**
      * Авторизация
-     * @return string
+     * @param UserLoginRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function login(UserLoginRequest $request)
     {
@@ -68,10 +74,11 @@ class UserController extends Controller
         ];
     }
 
-//    /**
-//     * Регистрация нового пользователя
-//     * @return string
-//     */
+    /**
+     * Регистрация нового пользователя
+     * @param UserRegisterRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(UserRegisterRequest $request)
     {
         $user = User::create([

@@ -3,8 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Exceptions\ApiException;
-use App\Models\PlaylistVideo;
-use Illuminate\Foundation\Http\FormRequest;
 
 class VideoDeletePlaylistRequest extends ApiRequest
 {

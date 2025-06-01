@@ -9,6 +9,16 @@ class ReportVideo extends Model
 {
     use HasFactory;
 
+
+    protected $hidden = [
+      'updated_at'
+    ];
+
+    protected $fillable = [
+      'video_id',
+      'user_id',
+      'report_id'
+    ];
     /**
      * Множество жалоб может быть от одного пользователя
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

@@ -9,6 +9,11 @@ class PlaylistVideo extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'playlist_id',
+        'video_id',
+    ];
+
     /**
      * Множество плейлистов могут иметь одно видео
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
