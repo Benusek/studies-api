@@ -97,8 +97,18 @@ class UserController extends Controller
         return parent::response($user, 'created')->setStatusCode(201, 'Created');
     }
 
+    /**
+     *
+     * @param UserUpdateRequest $request
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(UserUpdateRequest $request, User $user)
     {
+        if ($request->email !== null && $request->email !== $user->email) {
+            $user->update(request()->all() + ['email_verified_at' => null]);
+            event(new Registered($user));
+        }
         $user->update(request()->all());
         return parent::response($user, 'updated');
     }
