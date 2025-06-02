@@ -29,9 +29,11 @@ class UserController extends Controller
      * Просмотр всех пользователей
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index()
+    public function index($start, $count)
     {
-        return UserResource::collection(User::all());
+//        return Video::where([
+//        ])->orWhere(['user_id' => $request->user('api')->id]));
+        return UserResource::collection(User::get()->slice($start, $count));
     }
 
     /**

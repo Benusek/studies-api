@@ -26,7 +26,7 @@ Route::post('login', [UserController::class, 'login'])->withoutMiddleware('auth:
 Route::get('logout', [UserController::class, 'logout'])->middleware('auth:api');
 
 Route::prefix('video')->withoutMiddleware('auth:api')->group(function () {
-    Route::get('/', [VideoController::class, 'index']);
+    Route::get('/{start}/{count}', [VideoController::class, 'index']);
     Route::post('/{video}/comment', [CommentController::class, 'store']);
     Route::get('/{video}/comment', [CommentController::class, 'index']);
 });
@@ -61,6 +61,10 @@ Route::middleware('role:user')->group(function () {
         Route::delete('/{comment}', [CommentController::class, 'destroy']);
     });
 
+    Route::prefix('answer')->group(function () {
+        Route::patch('/{answer}', [CommentController::class, 'update_answer']);
+    });
+
     Route::prefix('playlist')->group(function () {
         Route::post('/', [PlaylistController::class, 'store']);
         Route::patch('/{playlist}', [PlaylistController::class, 'update']);
@@ -83,11 +87,11 @@ Route::middleware('role:user|moderator')->group(function () {
 
 Route::middleware('role:moderator')->group(function () {
     Route::prefix('report')->group(function () {
-        Route::get('/', [ReportController::class, 'index']);
+        Route::get('/{start}/{count}', [ReportController::class, 'index']);
         Route::delete('/{report}', [ReportController::class, 'destroy']);
     });
 
-    Route::get('user', [UserController::class, 'index']);
+    Route::get('user/{start}/{count}', [UserController::class, 'index']);
 });
 
 Route::get('/email/verify', function () {

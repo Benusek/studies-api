@@ -12,7 +12,8 @@ class Playlist extends Model
     protected $fillable = [
         'public',
         'user_id',
-        'title'
+        'title',
+        'description'
     ];
     /**
      * Множество плейлистов могут быть созданы одним пользователем

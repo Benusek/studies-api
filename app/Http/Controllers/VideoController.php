@@ -26,11 +26,11 @@ class VideoController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(Request $request)
+    public function index(Request $request, int $start,  int $count)
     {
-        return VideoResource::collection(Video::where([
+        return Video::where([
             'public' => 1
-        ])->orWhere(['user_id' => $request->user('api')->id])->get());
+        ])->orWhere(['user_id' => $request->user('api')->id])->get()->slice($start, $count);
     }
 
 

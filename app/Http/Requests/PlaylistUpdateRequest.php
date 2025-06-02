@@ -20,7 +20,8 @@ class PlaylistUpdateRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            //
+            "title" => 'string',
+            "description" => 'string'
         ];
     }
 }

@@ -9,7 +9,6 @@ class AnswerAddRequest extends ApiRequest
      */
     public function authorize(): bool
     {
-        //Пользователь не может оставлять ответ к комментарию приватного видео
         parent::private($this->comment->video, 'video');
         return true;
     }

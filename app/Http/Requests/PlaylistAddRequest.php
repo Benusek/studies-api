@@ -12,7 +12,8 @@ class PlaylistAddRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            "title" => 'required|string'
+            "title" => 'required|string',
+            "description" => 'string'
         ];
     }
 }

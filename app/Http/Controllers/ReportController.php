@@ -18,9 +18,9 @@ class ReportController extends Controller
      * Просмотр всех жалоб
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index()
+    public function index($start, $count)
     {
-        return ReportResource::collection(ReportVideo::all());
+        return ReportResource::collection(ReportVideo::get()->slice($start, $count));
     }
 
     /**

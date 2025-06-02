@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AnswerAddRequest;
+use App\Http\Requests\AnswerChangeRequest;
 use App\Http\Requests\CommentAddRequest;
 use App\Http\Requests\CommentChangeRequest;
 use App\Http\Requests\CommentDeleteRequest;
@@ -69,10 +70,22 @@ class CommentController extends Controller
     }
 
     /**
+     * Изменение ответа
+     * @param AnswerChangeRequest $request
+     * @param CommentAnswer $answer
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update_answer(AnswerChangeRequest $request, CommentAnswer $answer)
+    {
+        $answer->update($request->all());
+        return parent::response($answer, 'updated');
+    }
+
+    /**
      * Удаление комментария
      * @param CommentDeleteRequest $request
      * @param Comment $comment
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Foundation\Application|\Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(CommentDeleteRequest $request, Comment $comment)
     {
