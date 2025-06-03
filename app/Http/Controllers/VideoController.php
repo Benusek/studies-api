@@ -28,9 +28,9 @@ class VideoController extends Controller
      */
     public function index(Request $request, int $start,  int $count)
     {
-        return Video::where([
+        return VideoResource::collection(Video::where([
             'public' => 1
-        ])->orWhere(['user_id' => $request->user('api')->id])->get()->slice($start, $count);
+        ])->orWhere(['user_id' => $request->user('api')->id])->get()->slice($start, $count));
     }
 
 

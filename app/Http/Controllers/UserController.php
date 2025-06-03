@@ -31,8 +31,6 @@ class UserController extends Controller
      */
     public function index($start, $count)
     {
-//        return Video::where([
-//        ])->orWhere(['user_id' => $request->user('api')->id]));
         return UserResource::collection(User::get()->slice($start, $count));
     }
 
