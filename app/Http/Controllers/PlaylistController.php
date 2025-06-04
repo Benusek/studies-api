@@ -60,11 +60,11 @@ class PlaylistController extends Controller
      */
     public function show(Request $request, User $user)
     {
-        $my_playlists = $request->user('api')->playlists;
-        $collection_playlists = Playlist::whereIn('id', $request->user('api')->other_playlists->pluck('playlist_id'))->get();
-        $all = $my_playlists->concat($collection_playlists);
-        if ($request->user('api')->id === $user->id) {
-            return PlaylistResource::collection($all);
+        if ($request->user('api') !== null && $request->user('api')->id === $user->id) {
+                $my_playlists = $request->user('api')->playlists;
+                $collection_playlists = Playlist::whereIn('id', $request->user('api')->other_playlists->pluck('playlist_id'))->get();
+                $all = $my_playlists->concat($collection_playlists);
+                return PlaylistResource::collection($all);
         }
         return PlaylistResource::collection(Playlist::where([
             'user_id' => $user->id,
