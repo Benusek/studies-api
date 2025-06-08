@@ -28,6 +28,7 @@ Route::get('logout', [UserController::class, 'logout'])->middleware('auth:api');
 Route::prefix('video')->withoutMiddleware('auth:api')->group(function () {
     Route::get('/start/{start}/count/{count}', [VideoController::class, 'index']);
     Route::get('/{video}/comment', [CommentController::class, 'index']);
+//    Route::get('/search', [VideoController::class, 'search']);
 });
 
 Route::prefix('user')->withoutMiddleware('auth:api')->group(function () {

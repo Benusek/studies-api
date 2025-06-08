@@ -26,18 +26,19 @@ class VideoController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(Request $request, int $start,  int $count)
+    public function index(Request $request, int $start, int $count)
     {
-        if ($request->user('api') === null) {
-            return VideoResource::collection(Video::where([
-                'public' => 1
-            ])->get()->slice($start, $count));
+        if ($request->query->count()) {
+            $users = User::where('login', 'LIKE', "%{$request->get('query')}%")->get()->pluck('id')->toArray();
+            return VideoResource::collection(Video::where('title', 'LIKE', "%{$request->get('query')}%")
+                ->orWhere(function ($request) use ($users) {
+                    $request->whereIn('user_id', $users);
+                })->where('public', 1)->get()->slice($start, $count));
         }
         return VideoResource::collection(Video::where([
             'public' => 1
-        ])->orWhere(['user_id' => $request->user('api')->id])->get()->slice($start, $count));
+        ])->get()->slice($start, $count));
     }
-
 
     /**
      * Просмотр видео пользователя
@@ -64,7 +65,7 @@ class VideoController extends Controller
      */
     public function private(PrivateVideoRequest $request, Video $video)
     {
-        PlaylistVideo::where('video_id', '=', $video->id)->whereIn('playlist_id',  Playlist::where('user_id', '!=', $request->user('api')->id)->pluck('id'))->delete();
+        PlaylistVideo::where('video_id', '=', $video->id)->whereIn('playlist_id', Playlist::where('user_id', '!=', $request->user('api')->id)->pluck('id'))->delete();
         return parent::status($video, 0);
     }
 
