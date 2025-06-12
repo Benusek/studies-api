@@ -25,6 +25,8 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 Route::post('login', [UserController::class, 'login'])->withoutMiddleware('auth:api');
 Route::get('logout', [UserController::class, 'logout'])->middleware('auth:api');
 
+Route::get('category', [\App\Http\Controllers\CategoryController::class, 'index'])->withoutMiddleware('auth:api');
+
 Route::prefix('video')->withoutMiddleware('auth:api')->group(function () {
     Route::get('/start/{start}/count/{count}', [VideoController::class, 'index']);
     Route::get('/{video}/comment', [CommentController::class, 'index']);
@@ -50,7 +52,6 @@ Route::middleware('role:user')->group(function () {
     });
 
     Route::prefix('user')->group(function () {
-        Route::get('/{user}', [UserController::class, 'show']);
         Route::post('/{user}', [UserController::class, 'update']);
         Route::get('/{user}/follow', [SubscribeController::class, 'store']);
         Route::delete('/{user}/unfollow', [SubscribeController::class, 'destroy']);
@@ -81,6 +82,9 @@ Route::middleware('role:user')->group(function () {
     //->middleware('verified');
 
 Route::middleware('role:user|moderator')->group(function () {
+    Route::prefix('user')->group(function () {
+        Route::get('/{user}', [UserController::class, 'show']);
+    });
     Route::prefix('video')->group(function () {
         Route::delete('/{video}', [VideoController::class, 'destroy']);
     });

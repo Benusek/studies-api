@@ -62,7 +62,8 @@ class UserController extends Controller
         return response()->json([
             'data' => [
                 'user_token' => $user->generateToken(),
-                'role_id' => $user->role_id
+                'role_id' => $user->role_id,
+                'user_id' => $user->id
             ]
         ]);
     }

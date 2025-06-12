@@ -16,7 +16,7 @@ class ChannelResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'login' => $this->login,
+            'name' => $this->name,
             'photo_file' => $this->photo_file,
             'subscribers_count' => $this->subscribers->count()
         ];

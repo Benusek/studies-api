@@ -11,6 +11,9 @@ class UserShowRequest extends ApiRequest
      */
     public function authorize(): bool
     {
+        if ( $this->user()->role->code === 'moderator') {
+            return true;
+        }
         if ($this->user->id !== $this->user()->id) {
             throw new ApiException(402, 'You are not allowed to access this resource');
         }
