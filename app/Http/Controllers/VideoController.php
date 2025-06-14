@@ -28,8 +28,11 @@ class VideoController extends Controller
      */
     public function index(Request $request, int $start, int $count)
     {
-        if ($request->query->count()) {
-            $users = User::where('login', 'LIKE', "%{$request->get('query')}%")->get()->pluck('id')->toArray();
+        if ($request->get('category')) {
+            return VideoResource::collection(Video::where(['category_id' => $request->get('category'), 'public' => 1])->get()->slice($start, $count));
+        }
+        if ($request->get('query')) {
+            $users = User::where('name', 'LIKE', "%{$request->get('query')}%")->get()->pluck('id')->toArray();
             return VideoResource::collection(Video::where('title', 'LIKE', "%{$request->get('query')}%")
                 ->orWhere(function ($request) use ($users) {
                     $request->whereIn('user_id', $users);
