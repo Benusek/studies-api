@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PrivateVideoRequest;
 use App\Http\Requests\PublicVideoRequest;
+use App\Http\Requests\SearchRequest;
 use App\Http\Requests\TagAddRequest;
 use App\Http\Requests\TagDeleteRequest;
 use App\Http\Requests\VideoAddRequest;
 use App\Http\Requests\VideoDeleteRequest;
 use App\Http\Requests\VideoUpdateRequest;
+use App\Http\Resources\PlaylistResource;
 use App\Http\Resources\VideoResource;
 use App\Models\Playlist;
 use App\Models\PlaylistVideo;
@@ -17,7 +19,6 @@ use App\Models\TagVideo;
 use App\Models\User;
 use App\Models\Video;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class VideoController extends Controller
 {
@@ -41,6 +42,117 @@ class VideoController extends Controller
         return VideoResource::collection(Video::where([
             'public' => 1
         ])->get()->slice($start, $count));
+    }
+
+    /**
+     * Функция для сортировки видео с нужными тегами
+     * @param $videos
+     * @param $tags
+     * @return array
+     */
+    public function filterTags($videos, $tags)
+    {
+        $search = array();
+        foreach ($videos as $video) {
+            if (array_intersect($video->tags->pluck('tag_id')->toArray(), $tags)) {
+                array_push($search, $video);
+            }
+        }
+        return $search;
+    }
+
+    /**
+     * Функция для получения отфильтрованных видео
+     * @param $request
+     * @param $tags
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
+    public function filterGetVideos($request, $tags)
+    {
+        $users = User::where('name', 'LIKE', "%{$request->get('query')}%")->get()->pluck('id')->toArray();
+        $videos = Video::where('title', 'LIKE', "%{$request->get('query')}%")
+            ->orWhere(function ($request) use ($users) {
+                $request->whereIn('user_id', $users);
+            })->where('public', 1);
+        if ($request->get('categories')) {
+            $videos = $videos->whereIn('category_id', $request->get('categories'))->get();
+            $videos = VideoResource::collection($videos);
+        }
+        if ($request->get('tags')) {
+            $videos = VideoResource::collection($this->filterTags($videos, $tags));
+        }
+        if (!$request->get('tags') && !$request->get('categories')) {
+            $videos = $videos->get();
+            $videos = VideoResource::collection($videos);
+        }
+        return $videos;
+    }
+
+    /**
+     * Функция для получения отфильтрованных плейлистов
+     * @param $request
+     * @param $tags
+     * @return array
+     */
+    public function filterGetPlaylists($request, $tags)
+    {
+        $search = array();
+        $search_middle = array();
+        $playlists = Playlist::where(
+            'title', 'LIKE', "%{$request->get('query')}%",
+        )->where(['public' => 1])->get();
+        if ($request->get('categories')) {
+            $video_with_category = 0;
+            foreach ($playlists as $playlist) {
+
+                foreach ($playlist->videos as $video) {
+                    if (in_array($video->category_id, $request->get('categories'))) {
+                        $video_with_category++;
+                    }
+                }
+                if ($video_with_category >= $playlist->videos->count() / 2) {
+                    array_push($search, $playlist);
+                }
+            }
+        }
+        if ($request->get('tags')) {
+            foreach ($search as $playlist) {
+                $current_videos = $this->filterTags($playlist->videos, $tags);
+                if (count($current_videos) >= $playlist->videos->count()) {
+                    array_push($search_middle, $playlist);
+                }
+            }
+            $search = $search_middle;
+        }
+        return $search;
+    }
+
+    /**
+     * Фильтр для поиска видео/плейлиста
+     * @param SearchRequest $request
+     * @return array|\Illuminate\Http\JsonResponse|\Illuminate\Http\Resources\Json\AnonymousResourceCollection|void
+     */
+    public function search(SearchRequest $request)
+    {
+        $tags = $request->get('tags');
+        switch ($request->get('type')) {
+            case 'video':
+                return VideoResource::collection($this->filterGetVideos($request, $tags));
+            case 'playlist':
+                return PlaylistResource::collection($this->filterGetPlaylists($request, $tags));
+            case 'all':
+                $playlists = $this->filterGetPlaylists($request, $tags);
+                $videos = $this->filterGetVideos($request, $tags);
+
+                return response()->json([
+                    'data' => [
+                        'count_playlists' => count($playlists),
+                        'count_videos' => count($videos),
+                        'videos' => count($videos) ? VideoResource::collection($videos) : null,
+                        'playlists' => count($playlists) ? PlaylistResource::collection($playlists) : null,
+                    ]
+                ]);
+        }
     }
 
     /**

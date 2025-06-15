@@ -53,4 +53,13 @@ class Video extends Model
     public function reports() {
         return $this->hasMany(ReportVideo::class);
     }
+
+    /**
+     * Одно видео может находиться в множестве плейлистов
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function playlists()
+    {
+        return $this->hasMany(PlaylistVideo::class);
+    }
 }

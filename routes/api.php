@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PlaylistController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SubscribeController;
+use App\Http\Controllers\TagController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerifyEmailController;
 use App\Http\Controllers\VideoController;
@@ -25,12 +27,13 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 Route::post('login', [UserController::class, 'login'])->withoutMiddleware('auth:api');
 Route::get('logout', [UserController::class, 'logout'])->middleware('auth:api');
 
-Route::get('category', [\App\Http\Controllers\CategoryController::class, 'index'])->withoutMiddleware('auth:api');
+Route::get('category', [CategoryController::class, 'index'])->withoutMiddleware('auth:api');
+Route::get('tag', [TagController::class, 'index'])->withoutMiddleware('auth:api');
 
 Route::prefix('video')->withoutMiddleware('auth:api')->group(function () {
     Route::get('/start/{start}/count/{count}', [VideoController::class, 'index']);
     Route::get('/{video}/comment', [CommentController::class, 'index']);
-//    Route::get('/search', [VideoController::class, 'search']);
+    Route::post('/search', [VideoController::class, 'search']);
 });
 
 Route::prefix('user')->withoutMiddleware('auth:api')->group(function () {
