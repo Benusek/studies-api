@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ApiException;
 use App\Http\Requests\PrivateVideoRequest;
 use App\Http\Requests\PublicVideoRequest;
 use App\Http\Requests\SearchRequest;
@@ -124,25 +125,27 @@ class VideoController extends Controller
             }
             $search = $search_middle;
         }
-        return $search;
+        return collect($search);
     }
 
     /**
      * Фильтр для поиска видео/плейлиста
      * @param SearchRequest $request
-     * @return array|\Illuminate\Http\JsonResponse|\Illuminate\Http\Resources\Json\AnonymousResourceCollection|void
+     * @param int $start
+     * @param int $count
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Resources\Json\AnonymousResourceCollection|void
      */
-    public function search(SearchRequest $request)
+    public function search(SearchRequest $request, int $start, int $count)
     {
         $tags = $request->get('tags');
         switch ($request->get('type')) {
             case 'video':
-                return VideoResource::collection($this->filterGetVideos($request, $tags));
+                return VideoResource::collection($this->filterGetVideos($request, $tags)->slice($start, $count));
             case 'playlist':
-                return PlaylistResource::collection($this->filterGetPlaylists($request, $tags));
+                return PlaylistResource::collection($this->filterGetPlaylists($request, $tags)->slice($start, $count));
             case 'all':
-                $playlists = $this->filterGetPlaylists($request, $tags);
-                $videos = $this->filterGetVideos($request, $tags);
+                $videos = $this->filterGetVideos($request, $tags)->slice($start, $count);
+                $playlists = $this->filterGetPlaylists($request, $tags)->slice($start, $count);
 
                 return response()->json([
                     'data' => [
@@ -153,6 +156,7 @@ class VideoController extends Controller
                     ]
                 ]);
         }
+        throw new ApiException(404, 'Not found videos/playlists with this parameters');
     }
 
     /**

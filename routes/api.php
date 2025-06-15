@@ -33,7 +33,7 @@ Route::get('tag', [TagController::class, 'index'])->withoutMiddleware('auth:api'
 Route::prefix('video')->withoutMiddleware('auth:api')->group(function () {
     Route::get('/start/{start}/count/{count}', [VideoController::class, 'index']);
     Route::get('/{video}/comment', [CommentController::class, 'index']);
-    Route::post('/search', [VideoController::class, 'search']);
+    Route::post('/search/start/{start}/count/{count}', [VideoController::class, 'search']);
 });
 
 Route::prefix('user')->withoutMiddleware('auth:api')->group(function () {
