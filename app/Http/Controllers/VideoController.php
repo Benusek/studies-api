@@ -25,20 +25,14 @@ class VideoController extends Controller
 {
     /**
      * Просмотр всех видео
-     * @param Request $request
+     * @param int $start
+     * @param int $count
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function index(Request $request, int $start, int $count)
     {
         if ($request->get('category')) {
             return VideoResource::collection(Video::where(['category_id' => $request->get('category'), 'public' => 1])->get()->slice($start, $count));
-        }
-        if ($request->get('query')) {
-            $users = User::where('name', 'LIKE', "%{$request->get('query')}%")->get()->pluck('id')->toArray();
-            return VideoResource::collection(Video::where('title', 'LIKE', "%{$request->get('query')}%")
-                ->orWhere(function ($request) use ($users) {
-                    $request->whereIn('user_id', $users);
-                })->where('public', 1)->get()->slice($start, $count));
         }
         return VideoResource::collection(Video::where([
             'public' => 1
@@ -68,64 +62,71 @@ class VideoController extends Controller
      * @param $tags
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function filterGetVideos($request, $tags)
+    public function filterGetVideos($request)
     {
+        $tags = $request->get('tags');
         $users = User::where('name', 'LIKE', "%{$request->get('query')}%")->get()->pluck('id')->toArray();
         $videos = Video::where('title', 'LIKE', "%{$request->get('query')}%")
             ->orWhere(function ($request) use ($users) {
                 $request->whereIn('user_id', $users);
             })->where('public', 1);
-        if ($request->get('categories')) {
-            $videos = $videos->whereIn('category_id', $request->get('categories'))->get();
-            $videos = VideoResource::collection($videos);
+        if ($request->get('categories') && count($request->get('categories')) > 0) {
+            $videos = $videos->whereIn('category_id', $request->get('categories'));
         }
-        if ($request->get('tags')) {
-            $videos = VideoResource::collection($this->filterTags($videos, $tags));
+        if ($request->get('tags') && count($request->get('tags')) > 0) {
+            return VideoResource::collection($this->filterTags($videos->get(), $tags));
         }
-        if (!$request->get('tags') && !$request->get('categories')) {
-            $videos = $videos->get();
-            $videos = VideoResource::collection($videos);
-        }
-        return $videos;
+        return VideoResource::collection($videos->get());
     }
 
     /**
      * Функция для получения отфильтрованных плейлистов
      * @param $request
-     * @param $tags
-     * @return array
+     * @return \Illuminate\Support\Collection
      */
-    public function filterGetPlaylists($request, $tags)
+    public function filterGetPlaylists($request)
     {
-        $search = array();
+        $tags = $request->get('tags');
         $search_middle = array();
         $playlists = Playlist::where(
             'title', 'LIKE', "%{$request->get('query')}%",
         )->where(['public' => 1])->get();
+
+        //Сбор плейлистов в котором есть хотя бы одно видео
+        foreach($playlists as $playlist) {
+            if (count($playlist->videos) !== 0) {
+                array_push($search_middle, $playlist);
+            }
+        }
+
+        $playlists = $search_middle;
+        $search_middle = [];
+
         if ($request->get('categories')) {
             $video_with_category = 0;
             foreach ($playlists as $playlist) {
-
                 foreach ($playlist->videos as $video) {
                     if (in_array($video->category_id, $request->get('categories'))) {
                         $video_with_category++;
                     }
                 }
                 if ($video_with_category >= $playlist->videos->count() / 2) {
-                    array_push($search, $playlist);
+                    array_push($search_middle, $playlist);
                 }
             }
+            $playlists = $search_middle;
+            $search_middle = [];
         }
         if ($request->get('tags')) {
-            foreach ($search as $playlist) {
+            foreach ($playlists as $playlist) {
                 $current_videos = $this->filterTags($playlist->videos, $tags);
                 if (count($current_videos) >= $playlist->videos->count()) {
                     array_push($search_middle, $playlist);
                 }
             }
-            $search = $search_middle;
+            $playlists = $search_middle;
         }
-        return collect($search);
+        return collect($playlists);
     }
 
     /**
@@ -137,22 +138,21 @@ class VideoController extends Controller
      */
     public function search(SearchRequest $request, int $start, int $count)
     {
-        $tags = $request->get('tags');
         switch ($request->get('type')) {
             case 'video':
-                return VideoResource::collection($this->filterGetVideos($request, $tags)->slice($start, $count));
+                return VideoResource::collection($this->filterGetVideos($request)->slice($start, $count));
             case 'playlist':
-                return PlaylistResource::collection($this->filterGetPlaylists($request, $tags)->slice($start, $count));
+                return PlaylistResource::collection($this->filterGetPlaylists($request)->slice($start, $count));
             case 'all':
-                $videos = $this->filterGetVideos($request, $tags)->slice($start, $count);
-                $playlists = $this->filterGetPlaylists($request, $tags)->slice($start, $count);
+                $videos = $this->filterGetVideos($request);
+                $playlists = $this->filterGetPlaylists($request);
 
                 return response()->json([
                     'data' => [
                         'count_playlists' => count($playlists),
                         'count_videos' => count($videos),
-                        'videos' => count($videos) ? VideoResource::collection($videos) : null,
-                        'playlists' => count($playlists) ? PlaylistResource::collection($playlists) : null,
+                        'videos' => count($videos->slice($start, $count)) ? VideoResource::collection($videos->slice($start, $count)) : null,
+                        'playlists' => count($playlists->slice($start, $count)) ? PlaylistResource::collection($playlists->slice($start, $count)) : null,
                     ]
                 ]);
         }
