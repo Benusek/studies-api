@@ -73,6 +73,33 @@ class PlaylistController extends Controller
     }
 
     /**
+     * Получение добавленных чужих плейлистов
+     * @param Request $request
+     * @param User $user
+     * @return mixed
+     */
+    public function collection(Request $request)
+    {
+        return PlaylistResource::collection(Playlist::whereIn('id', $request->user('api')->other_playlists->pluck('playlist_id'))->get());
+    }
+
+    /**
+     * Получение моих плейлистов
+     * @param Request $request
+     * @param User $user
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
+    public function my_playlist(Request $request, User $user)
+    {
+        if ($request->user('api') !== null && $request->user('api')->id === $user->id) {
+            return PlaylistResource::collection($request->user('api')->playlists);
+        }
+        return PlaylistResource::collection(Playlist::where([
+            'user_id' => $user->id,
+            'public' => 1
+        ])->get());
+    }
+    /**
      * Обновление заголовка
      * @param PlaylistUpdateRequest $request
      * @param Playlist $playlist

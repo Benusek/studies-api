@@ -69,14 +69,14 @@ class VideoController extends Controller
         $videos = Video::where('title', 'LIKE', "%{$request->get('query')}%")
             ->orWhere(function ($request) use ($users) {
                 $request->whereIn('user_id', $users);
-            })->where('public', 1);
+            })->where('public', 1)->get();
         if ($request->get('categories') && count($request->get('categories')) > 0) {
             $videos = $videos->whereIn('category_id', $request->get('categories'));
         }
         if ($request->get('tags') && count($request->get('tags')) > 0) {
-            return VideoResource::collection($this->filterTags($videos->get(), $tags));
+            return VideoResource::collection($this->filterTags($videos, $tags));
         }
-        return VideoResource::collection($videos->get());
+        return VideoResource::collection($videos);
     }
 
     /**

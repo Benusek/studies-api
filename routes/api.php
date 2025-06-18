@@ -55,6 +55,8 @@ Route::middleware('role:user')->group(function () {
     });
 
     Route::prefix('user')->group(function () {
+        Route::get('/{user}/my-playlists', [PlaylistController::class, 'my_playlist']);
+        Route::get('/{user}/collections', [PlaylistController::class, 'collection']);
         Route::post('/{user}', [UserController::class, 'update']);
         Route::get('/{user}/follow', [SubscribeController::class, 'store']);
         Route::delete('/{user}/unfollow', [SubscribeController::class, 'destroy']);
