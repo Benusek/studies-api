@@ -21,6 +21,7 @@ use App\Models\Video;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -105,10 +106,15 @@ class UserController extends Controller
     public function update(UserUpdateRequest $request, User $user)
     {
         if ($request->email !== null && $request->email !== $user->email) {
-            $user->update(request()->all() + ['email_verified_at' => null]);
+            $user->update(request()->all() + ['email_verified_at' => null, 'photo_file' => $request->photo_file ? $request->photo_file->store('user_photos') : $user->photo_file]);
             event(new Registered($user));
         }
-        $user->update(request()->all());
+
+        if ($user->photo_file) {
+            Storage::delete($user->photo_file);
+        }
+
+        $user->update(['photo_file' => $request->photo_file ? $request->photo_file->store('user_photos') : $user->photo_file] + request()->all());
         return parent::response($user, 'updated');
     }
 }
