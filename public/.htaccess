@@ -19,4 +19,5 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
     Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+    Header set Access-Control-Allow-Methods "*"
 </IfModule>

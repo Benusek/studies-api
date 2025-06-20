@@ -56,6 +56,11 @@ class VideoController extends Controller
         return $search;
     }
 
+    public function video_playlists(Request $request, Video $video)
+    {
+        return $video->playlists->whereIn('playlist_id', $request->user('api')->playlists->pluck('id')->toArray());
+    }
+
     /**
      * Функция для получения отфильтрованных видео
      * @param $request

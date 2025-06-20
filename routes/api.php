@@ -55,6 +55,7 @@ Route::middleware('role:user')->group(function () {
     });
 
     Route::prefix('user')->group(function () {
+        Route::get('/video/{video}/playlist', [VideoController::class, 'video_playlists']);
         Route::get('/{user}/my-playlists', [PlaylistController::class, 'my_playlist']);
         Route::get('/{user}/collections', [PlaylistController::class, 'collection']);
         Route::post('/{user}', [UserController::class, 'update']);
