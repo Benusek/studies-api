@@ -31,6 +31,7 @@ Route::get('category', [CategoryController::class, 'index'])->withoutMiddleware(
 Route::get('tag', [TagController::class, 'index'])->withoutMiddleware('auth:api');
 
 Route::prefix('video')->withoutMiddleware('auth:api')->group(function () {
+    Route::get('/{video}', [VideoController::class, 'show_video']);
     Route::get('/start/{start}/count/{count}', [VideoController::class, 'index']);
     Route::get('/{video}/comment', [CommentController::class, 'index']);
     Route::post('/search/start/{start}/count/{count}', [VideoController::class, 'search']);

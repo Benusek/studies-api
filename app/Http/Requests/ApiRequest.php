@@ -55,8 +55,8 @@ class ApiRequest extends FormRequest
     }
 
     public function private($object, $message_obj) {
-        //Пользователь не может ... чужое приватное видео
-        if ($object->public === 0 && $this->user('api') === null || $object->user_id !== $this->user('api')->id) {
+        //Пользователь не может ... чужое приватное ...
+        if ($object->public === 0 && !$this->user('api') || $object->public === 0 && $object->user_id !== $this->user('api')?->id) {
             throw new ApiException(402, "This {$message_obj} is not public");
         }
     }

@@ -10,6 +10,7 @@ use App\Http\Requests\TagAddRequest;
 use App\Http\Requests\TagDeleteRequest;
 use App\Http\Requests\VideoAddRequest;
 use App\Http\Requests\VideoDeleteRequest;
+use App\Http\Requests\VideoShowRequest;
 use App\Http\Requests\VideoUpdateRequest;
 use App\Http\Resources\PlaylistResource;
 use App\Http\Resources\VideoResource;
@@ -179,6 +180,17 @@ class VideoController extends Controller
             'user_id' => $user->id,
             'public' => 1
         ])->get());
+    }
+
+    /**
+     * Просмотр одного видео
+     * @param VideoShowRequest $request
+     * @param Video $video
+     * @return VideoResource
+     */
+    public function show_video(VideoShowRequest $request, Video $video)
+    {
+        return VideoResource::make($video);
     }
 
     /**
