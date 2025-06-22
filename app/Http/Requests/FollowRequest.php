@@ -16,8 +16,8 @@ class FollowRequest extends ApiRequest
             throw new ApiException(402, 'You are not allowed to follow yourself.');
         }
 
-        //Пользователь не может подписаться на модератора
-        if ($this->user->role->code === 'moderator') {
+        //Пользователь не может подписаться на представителя другой роли
+        if ($this->user->role->code !== 'user') {
             throw new ApiException(402, 'You are not allowed to follow this users.');
         }
 

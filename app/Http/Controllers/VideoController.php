@@ -12,6 +12,7 @@ use App\Http\Requests\VideoAddRequest;
 use App\Http\Requests\VideoDeleteRequest;
 use App\Http\Requests\VideoShowRequest;
 use App\Http\Requests\VideoUpdateRequest;
+use App\Http\Resources\ChannelResource;
 use App\Http\Resources\PlaylistResource;
 use App\Http\Resources\VideoResource;
 use App\Models\Playlist;
@@ -169,17 +170,31 @@ class VideoController extends Controller
      * Просмотр видео пользователя
      * @param Request $request
      * @param User $user
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function show(Request $request, User $user)
     {
         if ($request->user('api')->id === $user->id) {
-            return VideoResource::collection(Video::where(['user_id' => $user->id])->get());
+            return response()->json([
+                'user' => ChannelResource::make($user),
+                'videos' => VideoResource::collection(Video::where(['user_id' => $user->id])->get())]);
         }
-        return VideoResource::collection(Video::where([
+        return response()->json([
+            'user' => ChannelResource::make($user),
+            'videos' => VideoResource::collection(Video::where([
             'user_id' => $user->id,
             'public' => 1
-        ])->get());
+        ])->get()),]);
+    }
+
+    public function recommendation(VideoShowRequest $request, Video $video)
+    {
+        $videos = Video::where('public', 1)->get();
+        $videos = $videos->where('category_id', '=', $video->category_id);
+        if (count($video->tags) === 0) {
+            return VideoResource::collection($videos);
+        }
+        return VideoResource::collection($this->filterTags($videos, $video->tags->pluck('tag_id')->toArray()));
     }
 
     /**

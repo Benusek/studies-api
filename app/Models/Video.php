@@ -62,4 +62,13 @@ class Video extends Model
     {
         return $this->hasMany(PlaylistVideo::class);
     }
+
+    /**
+     * Множество видео могут иметь одну категорию
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 }
