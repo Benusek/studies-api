@@ -57,14 +57,14 @@ class UserController extends Controller
             'password' => $request->password
         ])->first();
         if (!$user) {
-            throw new ApiException(401, 'Authentication failed');
+            throw new ApiException(401, 'Неверный логин или пароль');
         }
 
         return response()->json([
             'data' => [
+                'user' => UserResource::make($user),
                 'user_token' => $user->generateToken(),
-                'role_id' => $user->role_id,
-                'user_id' => $user->id
+                'message' => 'Успешный вход'
             ]
         ]);
     }
@@ -93,8 +93,8 @@ class UserController extends Controller
         $user = User::create([
             'photo_file' => $request->photo_file ? $request->photo_file->store('user_photos') : null] + $request->all()
         );
-        event(new Registered($user));
-        return parent::response($user, 'created')->setStatusCode(201, 'Created');
+//        event(new Registered($user));
+        return parent::response($user, 'created', 'Вы успешно зарегистрировались')->setStatusCode(201, 'Created');
     }
 
     /**
@@ -115,6 +115,6 @@ class UserController extends Controller
         }
 
         $user->update(['photo_file' => $request->photo_file ? $request->photo_file->store('user_photos') : $user->photo_file] + request()->all());
-        return parent::response($user, 'updated');
+        return parent::response($user, 'updated', 'Данные успешно обновлены');
     }
 }

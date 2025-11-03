@@ -63,6 +63,6 @@ class ApiRequest extends FormRequest
 
     protected function failedValidation(Validator $validator)
     {
-        throw new ApiException(422, 'Validation failed', $validator->errors());
+        throw new ApiException(422, 'Ошибка валидации', $validator->errors());
     }
 }

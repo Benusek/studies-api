@@ -21,6 +21,7 @@ use App\Models\Tag;
 use App\Models\TagVideo;
 use App\Models\User;
 use App\Models\Video;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class VideoController extends Controller
@@ -34,11 +35,13 @@ class VideoController extends Controller
     public function index(Request $request, int $start, int $count)
     {
         if ($request->get('category')) {
-            return VideoResource::collection(Video::where(['category_id' => $request->get('category'), 'public' => 1])->get()->slice($start, $count));
+            return VideoResource::collection(Video::where([
+                'category_id' => $request->get('category'), 'public' => 1
+            ])->skip($start)->take($count)->get());
         }
         return VideoResource::collection(Video::where([
             'public' => 1
-        ])->get()->slice($start, $count));
+        ])->skip($start)->take($count)->get());
     }
 
     /**
@@ -58,9 +61,28 @@ class VideoController extends Controller
         return $search;
     }
 
+    /**
+     * Просмотр своих плейлистов с конкретным видео
+     * @param Request $request
+     * @param Video $video
+     * @return mixed
+     */
     public function video_playlists(Request $request, Video $video)
     {
-        return $video->playlists->whereIn('playlist_id', $request->user('api')->playlists->pluck('id')->toArray());
+        $all = PlaylistResource::collection($request->user('api')->playlists);
+        $used = $video->playlists()
+            ->whereIn('playlist_id', $request->user()->playlists->pluck('id')->toArray())
+            ->get();
+
+        return $all->map(function ($item) use ($used) {
+            $playlist = Playlist::query()->find($item->id);
+            return [
+                'id' => $playlist->id,
+                'title' => $playlist->title,
+                'public' => $playlist->public,
+                'active' => $used->contains('playlist_id', $playlist->id),
+            ];
+        });
     }
 
     /**
@@ -69,6 +91,7 @@ class VideoController extends Controller
      * @param $tags
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
+    //TODO: Перепроверить, сделано не лучшим образом
     public function filterGetVideos($request)
     {
         $tags = $request->get('tags');
@@ -91,6 +114,7 @@ class VideoController extends Controller
      * @param $request
      * @return \Illuminate\Support\Collection
      */
+    //TODO: Перепроверить, сделано не лучшим образом
     public function filterGetPlaylists($request)
     {
         $tags = $request->get('tags');
@@ -136,6 +160,7 @@ class VideoController extends Controller
         return collect($playlists);
     }
 
+    //TODO: Перепроверить, сделано не лучшим образом
     /**
      * Фильтр для поиска видео/плейлиста
      * @param SearchRequest $request
@@ -174,7 +199,7 @@ class VideoController extends Controller
      */
     public function show(Request $request, User $user)
     {
-        if ($request->user('api')->id === $user->id) {
+        if ($request->user->id === $user->id) {
             return response()->json([
                 'user' => ChannelResource::make($user),
                 'videos' => VideoResource::collection(Video::where(['user_id' => $user->id])->get())]);
@@ -243,7 +268,7 @@ class VideoController extends Controller
                 'video_file' => $request->video_file ? $request->video_file->store('user_videos') : null,
                 'user_id' => $request->user('api')->id] + $request->all()
         );
-        return parent::response($video, 'created')->setStatusCode(201, 'Created');
+        return parent::response($video, 'created', 'Видео успешно добавлено')->setStatusCode(201, 'Created');
     }
 
     /**
@@ -255,7 +280,7 @@ class VideoController extends Controller
     public function update(VideoUpdateRequest $request, Video $video)
     {
         $video->update($request->all());
-        return parent::response($video, 'updated')->setStatusCode(201, 'Updated');
+        return parent::response($video, 'updated', 'Видео успешно обновлено')->setStatusCode(201, 'Updated');
     }
 
     /**
@@ -271,7 +296,7 @@ class VideoController extends Controller
             'tag_id' => $tag->id,
             'video_id' => $video->id
         ]);
-        return parent::response($tag, 'added to video');
+        return parent::response($tag, 'added to video', 'Тег успешно добавлен');
     }
 
     /**
@@ -287,7 +312,7 @@ class VideoController extends Controller
             'tag_id' => $tag->id,
             'video_id' => $video->id
         ])->delete();
-        return parent::response($tag, 'deleted from video');
+        return parent::response($tag, 'deleted from video', 'Тег успешно удален');
     }
 
 

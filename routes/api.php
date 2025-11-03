@@ -3,11 +3,9 @@
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PlaylistController;
-use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SubscribeController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\VerifyEmailController;
 use App\Http\Controllers\VideoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -53,12 +51,11 @@ Route::middleware('role:user')->group(function () {
         Route::delete('/{video}/tag/{tag}', [VideoController::class, 'destroy_tag']);
         Route::post('/', [VideoController::class, 'store']);
         Route::post('/{video}/update', [VideoController::class, 'update']);
-        Route::get('/{video}/report/{report}', [ReportController::class, 'store']);
     });
 
     Route::prefix('user')->group(function () {
         Route::get('/video/{video}/playlist', [VideoController::class, 'video_playlists']);
-        Route::get('/{user}/my-playlists', [PlaylistController::class, 'my_playlist']);
+        Route::get('/{user}/playlist', [PlaylistController::class, 'show']);
         Route::get('/{user}/collections', [PlaylistController::class, 'collection']);
         Route::post('/{user}', [UserController::class, 'update']);
         Route::get('/{user}/follow', [SubscribeController::class, 'store']);
@@ -78,8 +75,8 @@ Route::middleware('role:user')->group(function () {
     Route::prefix('playlist')->group(function () {
         Route::post('/', [PlaylistController::class, 'store']);
         Route::patch('/{playlist}', [PlaylistController::class, 'update']);
-        Route::get('/{playlist}/collection', [PlaylistController::class, 'store_other_playlist']);
-        Route::delete('/{playlist}/collection', [PlaylistController::class, 'destroy_other_playlist']);
+        Route::get('/{playlist}/collection', [PlaylistController::class, 'store_other']);
+        Route::delete('/{playlist}/collection', [PlaylistController::class, 'destroy_other']);
         Route::get('/{playlist}/video/{video}', [PlaylistController::class, 'store_video']);
         Route::get('/{playlist}/public', [PlaylistController::class, 'public']);
         Route::get('/{playlist}/private', [PlaylistController::class, 'private']);
@@ -99,25 +96,20 @@ Route::middleware('role:user|moderator')->group(function () {
 });
 
 Route::middleware('role:moderator')->group(function () {
-    Route::prefix('report')->group(function () {
-        Route::get('/start/{start}/count/{count}', [ReportController::class, 'index']);
-        Route::delete('/{report}', [ReportController::class, 'destroy']);
-    });
-
     Route::get('user/start/{start}/count/{count}', [UserController::class, 'index']);
 });
 
-Route::get('/email/verify', function () {
-    return view('auth.verify-email');
-})->middleware('auth')->name('verification.notice');
-
-
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $request->fulfill();
-    return redirect('/home');
-})->middleware(['auth', 'signed'])->name('verification.verify');
-
-Route::post('/email/verification-notification', function (Request $request) {
-    $request->user()->sendEmailVerificationNotification();
-    return back()->with('message', 'Verification link sent!');
-})->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+//Route::get('/email/verify', function () {
+//    return view('auth.verify-email');
+//})->middleware('auth')->name('verification.notice');
+//
+//
+//Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+//    $request->fulfill();
+//    return redirect('/home');
+//})->middleware(['auth', 'signed'])->name('verification.verify');
+//
+//Route::post('/email/verification-notification', function (Request $request) {
+//    $request->user()->sendEmailVerificationNotification();
+//    return back()->with('message', 'Verification link sent!');
+//})->middleware(['auth', 'throttle:6,1'])->name('verification.send');

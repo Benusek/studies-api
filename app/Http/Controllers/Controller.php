@@ -38,11 +38,12 @@ class Controller extends BaseController
      * @param $method
      * @return \Illuminate\Http\JsonResponse
      */
-    public function response($object, $method) {
+    public function response($object, $method, $message = null) {
         return response()->json([
             'data' => [
                 'id' => $object->id,
                 'status' => $method,
+                'message' => $message
             ]
         ]);
     }

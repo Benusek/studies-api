@@ -53,26 +53,6 @@ class PlaylistController extends Controller
     }
 
     /**
-     * Просмотр плейлистов пользователя
-     * @param Request $request
-     * @param User $user
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
-     */
-    public function show(Request $request, User $user)
-    {
-        if ($request->user('api') !== null && $request->user('api')->id === $user->id) {
-                $my_playlists = $request->user('api')->playlists;
-                $collection_playlists = Playlist::whereIn('id', $request->user('api')->other_playlists->pluck('playlist_id'))->get();
-                $all = $my_playlists->concat($collection_playlists);
-                return PlaylistResource::collection($all);
-        }
-        return PlaylistResource::collection(Playlist::where([
-            'user_id' => $user->id,
-            'public' => 1
-        ])->get());
-    }
-
-    /**
      * Получение добавленных чужих плейлистов
      * @param Request $request
      * @param User $user
@@ -89,16 +69,20 @@ class PlaylistController extends Controller
      * @param User $user
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function my_playlist(Request $request, User $user)
+    public function show(Request $request, User $user)
     {
-        if ($request->user('api') !== null && $request->user('api')->id === $user->id) {
+        //Вывод своих
+        if ($request->user('api') && $request->user('api')->id === $user->id) {
             return PlaylistResource::collection($request->user('api')->playlists);
         }
+
+        //Вывод конкретного
         return PlaylistResource::collection(Playlist::where([
             'user_id' => $user->id,
             'public' => 1
         ])->get());
     }
+
     /**
      * Обновление заголовка
      * @param PlaylistUpdateRequest $request
@@ -134,13 +118,13 @@ class PlaylistController extends Controller
         return parent::status($playlist, 0);
     }
 
-    public function store_other_playlist(OtherPlaylistAddRequest $request, Playlist $playlist)
+    public function store_other(OtherPlaylistAddRequest $request, Playlist $playlist)
     {
         UserPlaylist::create(['user_id' => $request->user('api')->id, 'playlist_id' => $playlist->id]);
         return parent::response($playlist, 'added to collection');
     }
 
-    public function destroy_other_playlist(OtherPlaylistDeleteRequest $request, Playlist $playlist)
+    public function destroy_other(OtherPlaylistDeleteRequest $request, Playlist $playlist)
     {
         UserPlaylist::where(['user_id' => $request->user('api')->id, 'playlist_id' => $playlist->id])->delete();
         return parent::response($playlist, 'deleted from collection');

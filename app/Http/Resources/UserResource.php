@@ -24,6 +24,7 @@ class UserResource extends JsonResource
             'login' => $this->login,
             'photo_file' => $this->photo_file,
             'created' => $this->created_at,
+            'role_id' => $this->role->id,
             'subscribers_count' => $this->subscribers->count(),
             'subscribers' => $this->subscribers
                 ->map(function ($subscriber) {

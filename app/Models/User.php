@@ -20,7 +20,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'name',
-        'api_token',
+        'remember_token',
         'login',
         'surname',
         'patronymic',
@@ -42,7 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'patronymic',
         'surname',
         'photo_file',
-        'api_token',
+        'remember_token',
         'updated_at',
         'created_at',
     ];
@@ -122,15 +122,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function generateToken()
     {
         $this->update([
-            'api_token' => Str::random(25)
+            'remember_token' => Str::random(25)
         ]);
-        return $this->api_token;
+        return $this->remember_token;
     }
 
     public function logout()
     {
         $this->update([
-            'api_token' => null
+            'remember_token' => null
         ]);
     }
 }
