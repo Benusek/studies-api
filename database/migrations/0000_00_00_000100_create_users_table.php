@@ -20,8 +20,9 @@ return new class extends Migration
             $table->string('email_verified_at')->nullable()->default(null);
             $table->string('login')->unique();
             $table->string('password');
-            $table->rememberToken();
-            $table->unsignedSmallInteger('role_id')->default(1);
+            $table->string('remember_token')->nullable();
+            $table->string('photo_file')->nullable();
+            $table->foreignId('role_id')->references('id')->on('roles')->onDelete('cascade');
             $table->timestamps();
         });
     }

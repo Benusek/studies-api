@@ -11,12 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('playlist_videos', function (Blueprint $table) {
+        Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('video_id');
-            $table->foreignId('playlist_id')->index();
-            $table->timestamps();
-
+            $table->string('name')->unique();
         });
     }
 
@@ -25,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('playlist_videos');
+        Schema::dropIfExists('categories');
     }
 };

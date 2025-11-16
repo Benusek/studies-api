@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class VideoCategory extends Model
 {
     use HasFactory;
-    public $timestamps = false;
 
     /**
      * Множество видео могут иметь одну категорию

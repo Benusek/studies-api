@@ -4,8 +4,16 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\Comment;
+use App\Models\CommentAnswer;
+use App\Models\Playlist;
+use App\Models\PlaylistVideo;
+use App\Models\Subscribe;
+use App\Models\TagVideo;
 use App\Models\User;
+use App\Models\UserPlaylist;
 use App\Models\Video;
+use App\Models\VideoCategory;
+use Database\Factories\TagVideoFactory;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,9 +25,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(3)->create();
-        // \App\Models\User::factory(10)->create();
-
         DB::table('roles')->insert([
             [
                 'name' => 'Пользователь',
@@ -30,7 +35,6 @@ class DatabaseSeeder extends Seeder
                 'code' => 'moderator'
             ]
         ]);
-
         User::factory(10)->create();
         DB::table('categories')->insert([
             ['name' => 'C#'],
@@ -46,5 +50,20 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Прочее']
         ]);
 
+        DB::table('tags')->insert([
+            ['name' => 'Гайд'],
+            ['name' => 'Теория'],
+            ['name' => 'Задача'],
+            ['name' => 'Практика'],
+            ['name' => 'Для начинающих']
+        ]);
+
+        Video::factory(10)->create();
+        VideoCategory::factory(10)->create();
+        Comment::factory(10)->create();
+        CommentAnswer::factory(10)->create();
+        TagVideo::factory(10)->create();
+        Playlist::factory(10)->create();
+        PlaylistVideo::factory(10)->create();
     }
 }

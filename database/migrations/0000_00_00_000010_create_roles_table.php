@@ -11,13 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('playlists', function (Blueprint $table) {
+        Schema::create('roles', function (Blueprint $table) {
             $table->id();
-            $table->string('title')->unique();
-            $table->string('description')->nullable();
-            $table->boolean('public')->default(false);
-            $table->foreignId('user_id');
-            $table->timestamps();
+            $table->string('name')->unique();
+            $table->string('code')->unique();
         });
     }
 
@@ -26,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('playlists');
+        Schema::dropIfExists('roles');
     }
 };

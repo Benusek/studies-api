@@ -17,9 +17,9 @@ return new class extends Migration
             $table->string('description');
             $table->string('photo_file')->nullable();
             $table->string('video_file');
-            $table->boolean('public')->default(false);
-            $table->foreignId('user_id');
-            $table->foreignId('category_id')->default('12');
+            $table->boolean('public')->default(true);
+            $table->foreignId('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreignId('category_id')->references('id')->on('categories')->onDelete('cascade')->default(12);
             $table->timestamps();
         });
     }
