@@ -15,11 +15,13 @@ class Video extends Model
     protected $fillable = [
         'title',
         'description',
-        'photo_file',
-        'video_file',
+        'thumbnail',
+        'video',
+        'duration',
         'user_id',
         'public'
     ];
+    
     /**
      * Множество видео могут быть опубликованы одним пользователем
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

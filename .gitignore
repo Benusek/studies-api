@@ -5,9 +5,9 @@
 /public/storage
 /storage/*.key
 /vendor
-/user_photos
-/user_videos
-/video_previews
+/avatars
+/videos
+/previews
 /public/user_photos
 /public/user_videos
 /public/video_previews

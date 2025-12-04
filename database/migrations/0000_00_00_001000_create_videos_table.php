@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('title')->unique();
             $table->string('description');
-            $table->string('photo_file')->nullable();
-            $table->string('video_file');
+            $table->string('thumbnail')->nullable();
+            $table->string('video');
+            $table->integer('duration');
             $table->boolean('public')->default(true);
             $table->foreignId('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreignId('category_id')->references('id')->on('categories')->onDelete('cascade')->default(12);
+            $table->foreignId('category_id')->default(11)->references('id')->on('categories')->onDelete('cascade');
             $table->timestamps();
         });
     }

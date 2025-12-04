@@ -36,6 +36,7 @@ class Controller extends BaseController
      * Функция для вывода ответа
      * @param $object
      * @param $method
+     * @param $message
      * @return \Illuminate\Http\JsonResponse
      */
     public function response($object, $method, $message = null) {

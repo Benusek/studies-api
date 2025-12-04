@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\VideoController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,4 +16,17 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+Route::prefix('uploads')->group(function () {
+    Route::get("/playlist/{folder}/{filename}", [VideoController::class, 'getVideo'])->name("video.playlist");
+    Route::get("/file/{folder}/{filename}", [VideoController::class, 'getFile'])->name("video.file");
+});
+
+Route::get('/about', function () {
+    return 'This is the About Us page.';
+});
+
+Route::get('/users/{id}', function ($id) {
+    return 'User ID: ' . $id;
 });

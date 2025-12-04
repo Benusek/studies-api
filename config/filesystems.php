@@ -29,13 +29,11 @@ return [
     */
 
     'disks' => [
-
         'local' => [
             'driver' => 'local',
             'root' => storage_path('..'),
             'throw' => false,
         ],
-
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
@@ -43,7 +41,13 @@ return [
             'visibility' => 'public',
             'throw' => false,
         ],
-
+        'media' => [
+            'driver' => 'local',
+            'root' => public_path('media'),
+            'url' => env('APP_URL').'/media',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -71,9 +75,10 @@ return [
 
     'links' => [
         //public_path('storage') => storage_path('app/public'),
-        public_path('user_photos') => storage_path('../user_photos'),
-        public_path('user_videos') => storage_path('../user_videos'),
-        public_path('video_previews') => storage_path('../video_previews'),
+        public_path('avatars') => storage_path('../avatars'),
+        public_path('videos') => storage_path('../videos'),
+        public_path('previews') => storage_path('../previews'),
+        public_path('media') => storage_path('../media'),
     ],
 
 ];

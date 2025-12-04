@@ -15,14 +15,18 @@ use App\Http\Requests\VideoUpdateRequest;
 use App\Http\Resources\ChannelResource;
 use App\Http\Resources\PlaylistResource;
 use App\Http\Resources\VideoResource;
+use App\Jobs\CreateVideoJob;
 use App\Models\Playlist;
 use App\Models\PlaylistVideo;
 use App\Models\Tag;
 use App\Models\TagVideo;
 use App\Models\User;
 use App\Models\Video;
+use FFMpeg\Format\Video\X264;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
 
 class VideoController extends Controller
 {
@@ -124,7 +128,7 @@ class VideoController extends Controller
         )->where(['public' => 1])->get();
 
         //Сбор плейлистов в котором есть хотя бы одно видео
-        foreach($playlists as $playlist) {
+        foreach ($playlists as $playlist) {
             if (count($playlist->videos) !== 0) {
                 array_push($search_middle, $playlist);
             }
@@ -161,6 +165,7 @@ class VideoController extends Controller
     }
 
     //TODO: Перепроверить, сделано не лучшим образом
+
     /**
      * Фильтр для поиска видео/плейлиста
      * @param SearchRequest $request
@@ -207,9 +212,9 @@ class VideoController extends Controller
         return response()->json([
             'user' => ChannelResource::make($user),
             'videos' => VideoResource::collection(Video::where([
-            'user_id' => $user->id,
-            'public' => 1
-        ])->get()),]);
+                'user_id' => $user->id,
+                'public' => 1
+            ])->get()),]);
     }
 
     public function recommendation(VideoShowRequest $request, Video $video)
@@ -263,12 +268,43 @@ class VideoController extends Controller
      */
     public function store(VideoAddRequest $request)
     {
-        $video = Video::create([
-                'photo_file' => $request->photo_file ? $request->photo_file->store('video_previews') : null,
-                'video_file' => $request->video_file ? $request->video_file->store('user_videos') : null,
-                'user_id' => $request->user('api')->id] + $request->all()
-        );
-        return parent::response($video, 'created', 'Видео успешно добавлено')->setStatusCode(201, 'Created');
+        $video = $request->file('video');
+        $path = [
+            'default' => $video->store('videos'),
+            'hls' => pathinfo($request->file('video'), PATHINFO_FILENAME) . '/index.m3u8'
+        ];
+        $thumbnail = $request->file('thumbnail');
+        $thumbnail ? $thumbnail = $thumbnail->store('previews') : $thumbnail = $this->getPreview($video);
+        CreateVideoJob::dispatch($thumbnail, $path, $request->user()->id, $request->except(['video', 'thumbnail']));
+        return response()->json(['message' => 'В ближайшее время видео будет добавлено'])->setStatusCode(201, 'Created');
+    }
+
+    protected function getPreview($file)
+    {
+        $path = 'previews/' . pathinfo($file, PATHINFO_FILENAME) . '.jpeg';
+        FFMpeg::open($file)
+            ->getFrameFromSeconds(0)
+            ->export()
+            ->toDisk('local')
+            ->save($path);
+        return $path;
+    }
+
+    public function getVideo($folder, $filename)
+    {
+        return FFMpeg::dynamicHLSPlaylist('local')
+            ->open("media/$folder/$filename")
+            ->setMediaUrlResolver(function ($filename) use ($folder) {
+                return route("video.file", ["folder" => $folder, "filename" => $filename]);
+            })
+            ->setPlaylistUrlResolver(function ($filename) use ($folder) {
+                return route("video.playlist", ["folder" => $folder, "filename" => $filename]);
+            });
+    }
+
+    public function getFile($folder, $filename)
+    {
+        return Storage::disk("media")->get("$folder/$filename");
     }
 
     /**

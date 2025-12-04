@@ -24,7 +24,9 @@ class VideoFactory extends Factory
             'public' => $this->faker->boolean(),
             'user_id' => User::all()->random()->id,
             'category_id' => Category::all()->random()->id,
-            'video_file' => 'user_videos/0oholxpqSFug4Ho4rq0P9pzultwMJ3r6lLgzjvQK.mp4'
+            'video' => 'uploads/playlist/phpg9ephs5on0528va6AMb/index.m3u8',
+            'thumbnail' => 'previews/7ZxVxSPf28LLAOGwb65wneVWpVVBThJKF66cvlpT.jpg',
+            'duration' => 49667
         ];
     }
 }

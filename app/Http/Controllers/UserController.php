@@ -21,6 +21,7 @@ use App\Models\Video;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
@@ -53,10 +54,9 @@ class UserController extends Controller
     public function login(UserLoginRequest $request)
     {
         $user = User::where([
-            'login' => $request->login,
-            'password' => $request->password
+            'login' => $request->login
         ])->first();
-        if (!$user) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             throw new ApiException(401, 'Неверный логин или пароль');
         }
 
@@ -91,7 +91,7 @@ class UserController extends Controller
     public function store(UserRegisterRequest $request)
     {
         $user = User::create([
-            'photo_file' => $request->photo_file ? $request->photo_file->store('user_photos') : null] + $request->all()
+            'photo_file' => $request->photo_file ? $request->photo_file->store('avatars') : null] + $request->all()
         );
 //        event(new Registered($user));
         return parent::response($user, 'created', 'Вы успешно зарегистрировались')->setStatusCode(201, 'Created');
@@ -106,7 +106,7 @@ class UserController extends Controller
     public function update(UserUpdateRequest $request, User $user)
     {
         if ($request->email !== null && $request->email !== $user->email) {
-            $user->update(request()->all() + ['email_verified_at' => null, 'photo_file' => $request->photo_file ? $request->photo_file->store('user_photos') : $user->photo_file]);
+            $user->update(request()->all() + ['email_verified_at' => null, 'photo_file' => $request->photo_file ? $request->photo_file->store('avatars') : $user->photo_file]);
             event(new Registered($user));
         }
 
@@ -114,7 +114,7 @@ class UserController extends Controller
             Storage::delete($user->photo_file);
         }
 
-        $user->update(['photo_file' => $request->photo_file ? $request->photo_file->store('user_photos') : $user->photo_file] + request()->all());
+        $user->update(['photo_file' => $request->photo_file ? $request->photo_file->store('avatars') : $user->photo_file] + request()->all());
         return parent::response($user, 'updated', 'Данные успешно обновлены');
     }
 }
