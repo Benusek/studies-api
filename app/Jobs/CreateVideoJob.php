@@ -54,7 +54,6 @@ class CreateVideoJob implements ShouldQueue
             })
             ->toDisk('media')
             ->save("{$this->path['hls']}");
-
         Video::create([
                 'video' => "uploads/playlist/{$this->path['hls']}",
                 'duration' => $milliseconds,

@@ -42,8 +42,8 @@ class UserController extends Controller
      * @param User $user
      * @return UserResource
      */
-    public function show(UserShowRequest $request, User $user) {
-        return UserResource::make($user);
+    public function show(UserShowRequest $request) {
+        return UserResource::make($request->user());
     }
 
     /**

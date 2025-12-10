@@ -8,7 +8,6 @@ use App\Http\Requests\PublicVideoRequest;
 use App\Http\Requests\SearchRequest;
 use App\Http\Requests\TagAddRequest;
 use App\Http\Requests\TagDeleteRequest;
-use App\Http\Requests\VideoAddRequest;
 use App\Http\Requests\VideoDeleteRequest;
 use App\Http\Requests\VideoShowRequest;
 use App\Http\Requests\VideoUpdateRequest;
@@ -22,10 +21,11 @@ use App\Models\Tag;
 use App\Models\TagVideo;
 use App\Models\User;
 use App\Models\Video;
-use FFMpeg\Format\Video\X264;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Pion\Laravel\ChunkUpload\Handler\ResumableJSUploadHandler;
+use Pion\Laravel\ChunkUpload\Receiver\FileReceiver;
 use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
 
 class VideoController extends Controller
@@ -261,28 +261,54 @@ class VideoController extends Controller
         return parent::status($video, 1);
     }
 
-    /**
-     * Добавление видео
-     * @param VideoAddRequest $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function store(VideoAddRequest $request)
+    public function store(Request $request)
     {
-        $video = $request->file('video');
-        $path = [
-            'default' => $video->store('videos'),
-            'hls' => pathinfo($request->file('video'), PATHINFO_FILENAME) . '/index.m3u8'
-        ];
-        $thumbnail = $request->file('thumbnail');
-        $thumbnail ? $thumbnail = $thumbnail->store('previews') : $thumbnail = $this->getPreview($video);
-        CreateVideoJob::dispatch($thumbnail, $path, $request->user()->id, $request->except(['video', 'thumbnail']));
-        return response()->json(['message' => 'В ближайшее время видео будет добавлено'])->setStatusCode(201, 'Created');
+        $receiver = new FileReceiver('video', $request, ResumableJSUploadHandler::class);
+        $save = $receiver->receive();
+        $handler = $save->handler();
+
+        if ($save->isFinished()) {
+            $request->validate([
+                'title' => 'required|string|unique:videos,title',
+                'description' => 'required|string',
+                'thumbnail' => 'image|mimes:jpeg,png,jpg|dimensions:ratio=16/9,min_height=720,min_width=1280',
+                'category_id' => 'exists:categories,id'
+            ]);
+
+            $file = $save->getFile();
+
+            if (in_array($file->getMimeType(), ['video/mp4', 'video/ogg', 'video/webm', 'video/quicktime'])) {
+                unlink($file);
+                return response()->json(['errors' => ['video' => ['Invalid video format']]], 422);
+            }
+            $fileName = $file->hashName();
+            $folder = $file->move(Storage::disk('local')->path('/videos'), $fileName)->getPathname();
+            $default = substr($folder, strpos($folder, '../') + 3);
+
+            $path = [
+                'default' => $default,
+                'hls' => pathinfo($request->file('video'), PATHINFO_FILENAME) . '/index.m3u8'
+            ];
+            $thumbnail = $request->file('thumbnail');
+            $thumbnail ? $thumbnail = $thumbnail->store('previews') : $thumbnail = $this->getPreview($default);
+            CreateVideoJob::dispatch($thumbnail, $path, $request->user('api')->id, $request->except(['video', 'thumbnail']));
+
+            return response()->json([
+                'progress' => $handler->getPercentageDone(),
+                'message' => "В ближайшее время видео будет добавлено"
+            ])->setStatusCode(201);
+        }
+
+        return response()->json([
+            'progress' => $handler->getPercentageDone()
+        ]);
     }
 
     protected function getPreview($file)
     {
         $path = 'previews/' . pathinfo($file, PATHINFO_FILENAME) . '.jpeg';
-        FFMpeg::open($file)
+        FFMpeg::fromDisk('local')
+            ->open($file)
             ->getFrameFromSeconds(0)
             ->export()
             ->toDisk('local')
@@ -308,7 +334,6 @@ class VideoController extends Controller
     }
 
     /**
-     * Изменение содержимого видео
      * @param VideoUpdateRequest $request
      * @param Video $video
      * @return \Illuminate\Http\JsonResponse

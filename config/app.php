@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Studies'),
 
     /*
     |--------------------------------------------------------------------------
@@ -159,7 +159,7 @@ return [
         /*
          * Laravel Framework Service Providers...
          */
-
+        Pion\Laravel\ChunkUpload\Providers\ChunkUploadServiceProvider::class,
         ProtoneMedia\LaravelFFMpeg\Support\ServiceProvider::class,
         Illuminate\Auth\AuthServiceProvider::class,
         Illuminate\Broadcasting\BroadcastServiceProvider::class,
@@ -187,6 +187,7 @@ return [
         /*
          * Package Service Providers...
          */
+        Pion\Laravel\ChunkUpload\Providers\ChunkUploadServiceProvider::class,
 
         /*
          * Application Service Providers...
@@ -196,7 +197,6 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-
     ],
 
     /*
