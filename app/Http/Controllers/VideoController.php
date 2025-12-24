@@ -3,13 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\ApiException;
-use App\Http\Requests\PrivateVideoRequest;
-use App\Http\Requests\PublicVideoRequest;
+use App\Http\Requests\ApiRequest;
 use App\Http\Requests\SearchRequest;
-use App\Http\Requests\TagAddRequest;
-use App\Http\Requests\TagDeleteRequest;
-use App\Http\Requests\VideoDeleteRequest;
-use App\Http\Requests\VideoShowRequest;
 use App\Http\Requests\VideoUpdateRequest;
 use App\Http\Resources\ChannelResource;
 use App\Http\Resources\PlaylistResource;
@@ -21,9 +16,14 @@ use App\Models\Tag;
 use App\Models\TagVideo;
 use App\Models\User;
 use App\Models\Video;
+use App\Services\FormatterService;
+use App\Services\RecommendationService;
+use App\Services\SearchService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Pion\Laravel\ChunkUpload\Handler\ResumableJSUploadHandler;
 use Pion\Laravel\ChunkUpload\Receiver\FileReceiver;
 use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
@@ -31,7 +31,8 @@ use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
 class VideoController extends Controller
 {
     /**
-     * Просмотр всех видео
+     * Get all videos
+     * @param Request $request
      * @param int $start
      * @param int $count
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
@@ -49,24 +50,7 @@ class VideoController extends Controller
     }
 
     /**
-     * Функция для сортировки видео с нужными тегами
-     * @param $videos
-     * @param $tags
-     * @return array
-     */
-    public function filterTags($videos, $tags)
-    {
-        $search = array();
-        foreach ($videos as $video) {
-            if (array_intersect($video->tags->pluck('tag_id')->toArray(), $tags)) {
-                array_push($search, $video);
-            }
-        }
-        return $search;
-    }
-
-    /**
-     * Просмотр своих плейлистов с конкретным видео
+     * Get video exists playlists
      * @param Request $request
      * @param Video $video
      * @return mixed
@@ -89,122 +73,46 @@ class VideoController extends Controller
         });
     }
 
-    /**
-     * Функция для получения отфильтрованных видео
-     * @param $request
-     * @param $tags
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
-     */
-    //TODO: Перепроверить, сделано не лучшим образом
-    public function filterGetVideos($request)
-    {
-        $tags = $request->get('tags');
-        $users = User::where('name', 'LIKE', "%{$request->get('query')}%")->get()->pluck('id')->toArray();
-        $videos = Video::where('title', 'LIKE', "%{$request->get('query')}%")
-            ->orWhere(function ($request) use ($users) {
-                $request->whereIn('user_id', $users);
-            })->where('public', 1)->get();
-        if ($request->get('categories') && count($request->get('categories')) > 0) {
-            $videos = $videos->whereIn('category_id', $request->get('categories'));
-        }
-        if ($request->get('tags') && count($request->get('tags')) > 0) {
-            return VideoResource::collection($this->filterTags($videos, $tags));
-        }
-        return VideoResource::collection($videos);
-    }
 
     /**
-     * Функция для получения отфильтрованных плейлистов
-     * @param $request
-     * @return \Illuminate\Support\Collection
-     */
-    //TODO: Перепроверить, сделано не лучшим образом
-    public function filterGetPlaylists($request)
-    {
-        $tags = $request->get('tags');
-        $search_middle = array();
-        $playlists = Playlist::where(
-            'title', 'LIKE', "%{$request->get('query')}%",
-        )->where(['public' => 1])->get();
-
-        //Сбор плейлистов в котором есть хотя бы одно видео
-        foreach ($playlists as $playlist) {
-            if (count($playlist->videos) !== 0) {
-                array_push($search_middle, $playlist);
-            }
-        }
-
-        $playlists = $search_middle;
-        $search_middle = [];
-
-        if ($request->get('categories')) {
-            $video_with_category = 0;
-            foreach ($playlists as $playlist) {
-                foreach ($playlist->videos as $video) {
-                    if (in_array($video->category_id, $request->get('categories'))) {
-                        $video_with_category++;
-                    }
-                }
-                if ($video_with_category >= $playlist->videos->count() / 2) {
-                    array_push($search_middle, $playlist);
-                }
-            }
-            $playlists = $search_middle;
-            $search_middle = [];
-        }
-        if ($request->get('tags')) {
-            foreach ($playlists as $playlist) {
-                $current_videos = $this->filterTags($playlist->videos, $tags);
-                if (count($current_videos) >= $playlist->videos->count()) {
-                    array_push($search_middle, $playlist);
-                }
-            }
-            $playlists = $search_middle;
-        }
-        return collect($playlists);
-    }
-
-    //TODO: Перепроверить, сделано не лучшим образом
-
-    /**
-     * Фильтр для поиска видео/плейлиста
+     * Search video/playlist
      * @param SearchRequest $request
      * @param int $start
      * @param int $count
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Resources\Json\AnonymousResourceCollection|void
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function search(SearchRequest $request, int $start, int $count)
     {
-        switch ($request->get('type')) {
-            case 'video':
-                return VideoResource::collection($this->filterGetVideos($request)->slice($start, $count));
-            case 'playlist':
-                return PlaylistResource::collection($this->filterGetPlaylists($request)->slice($start, $count));
-            case 'all':
-                $videos = $this->filterGetVideos($request);
-                $playlists = $this->filterGetPlaylists($request);
-
-                return response()->json([
-                    'data' => [
-                        'count_playlists' => count($playlists),
-                        'count_videos' => count($videos),
-                        'videos' => count($videos->slice($start, $count)) ? VideoResource::collection($videos->slice($start, $count)) : null,
-                        'playlists' => count($playlists->slice($start, $count)) ? PlaylistResource::collection($playlists->slice($start, $count)) : null,
-                    ]
-                ]);
-        }
-        throw new ApiException(404, 'Not found videos/playlists with this parameters');
+        $videos = SearchService::video($request)->paginate($count, ['*'], 'page', $start);
+        $playlists = SearchService::playlist($request)->paginate($count, ['*'], 'page', $start);
+        return match ($request->type) {
+            'video' => VideoResource::collection($videos)
+                ->additional(['count' => $videos->total()]),
+            'playlist' => PlaylistResource::collection($playlists)
+                ->additional(['count' => $playlists->total()]),
+            'all' => response()->json([
+                'videos' => [
+                    'items' => VideoResource::collection($videos),
+                    'count' => $videos->total(),
+                ],
+                'playlists' => [
+                    'items' => PlaylistResource::collection($playlists),
+                    'count' => $playlists->total(),
+                ],
+                'count' => $videos->total() + $playlists->total(),
+            ]),
+            default => throw new ApiException(404, 'Unknown search type'),
+        };
     }
 
     /**
-     * Просмотр видео пользователя
-     * @param Request $request
+     * Get user's videos
      * @param User $user
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function show(Request $request, User $user)
+    public function show(User $user)
     {
-        if ($request->user->id === $user->id) {
+        if (auth('api')->id() === $user->id) {
             return response()->json([
                 'user' => ChannelResource::make($user),
                 'videos' => VideoResource::collection(Video::where(['user_id' => $user->id])->get())]);
@@ -214,108 +122,145 @@ class VideoController extends Controller
             'videos' => VideoResource::collection(Video::where([
                 'user_id' => $user->id,
                 'public' => 1
-            ])->get()),]);
-    }
-
-    public function recommendation(VideoShowRequest $request, Video $video)
-    {
-        $videos = Video::where('public', 1)->get();
-        $videos = $videos->where('category_id', '=', $video->category_id);
-        if (count($video->tags) === 0) {
-            return VideoResource::collection($videos);
-        }
-        return VideoResource::collection($this->filterTags($videos, $video->tags->pluck('tag_id')->toArray()));
+            ])->get())]);
     }
 
     /**
-     * Просмотр одного видео
-     * @param VideoShowRequest $request
-     * @param Video $video
-     * @return VideoResource
-     */
-    public function show_video(VideoShowRequest $request, Video $video)
-    {
-        return VideoResource::make($video);
-    }
-
-    /**
-     * Изменение статуса видео на приватное
-     * @param PrivateVideoRequest $request
+     * Watching video
      * @param Video $video
      * @return \Illuminate\Http\JsonResponse
      */
-    public function private(PrivateVideoRequest $request, Video $video)
+    public function show_video(Video $video)
     {
-        PlaylistVideo::where('video_id', '=', $video->id)->whereIn('playlist_id', Playlist::where('user_id', '!=', $request->user('api')->id)->pluck('id'))->delete();
+        ApiRequest::private($video, 'video');
+        return response()->json([
+            'video' => VideoResource::make($video),
+            'recommendations' => VideoResource::collection(RecommendationService::get($video))
+        ]);
+    }
+
+    /**
+     * Change status on private
+     * @param Video $video
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function private(Video $video)
+    {
+        ApiRequest::status($video, 'video', 0);
+        PlaylistVideo::where('video_id', '=', $video->id)->whereIn('playlist_id', Playlist::where('user_id', '!=', auth('api')->id())->pluck('id'))->delete();
         return parent::status($video, 0);
     }
 
     /**
-     * Изменение статуса видео на публичное
-     * @param PublicVideoRequest $request
+     * Change status on public
      * @param Video $video
      * @return \Illuminate\Http\JsonResponse
      */
-    public function public(PublicVideoRequest $request, Video $video)
+    public function public(Video $video)
     {
+        ApiRequest::status($video, 'video', 1);
         return parent::status($video, 1);
     }
 
+    /**
+     * Meta-data for video
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function meta(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|unique:videos,title',
+            'description' => 'required|string',
+            'thumbnail' => 'image|mimes:jpeg,png,jpg|dimensions:ratio=16/9,min_height=720,min_width=1280',
+            'category_id' => 'exists:categories,id'
+        ]);
+
+        $thumbnail = $request->file('thumbnail');
+        $thumbnail ? $thumbnail = $thumbnail->store('previews') : $thumbnail = null;
+
+        $token = Str::uuid()->toString();
+        Cache::put($token, [
+            'title' => $request->title,
+            'description' => $request->description,
+            'thumbnail' => $thumbnail,
+            'category_id' => $request->category_id,
+            'public' => $request->public,
+        ], now()->addMinutes(30));
+
+        return response()->json(['data' => ['upload_token' => $token]]);
+    }
+
+    /**
+     * Chunk upload video
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
-        $receiver = new FileReceiver('video', $request, ResumableJSUploadHandler::class);
-        $save = $receiver->receive();
-        $handler = $save->handler();
+        try {
+            $receiver = new FileReceiver('file', $request, ResumableJSUploadHandler::class);
+            $save = $receiver->receive();
+            $handler = $save->handler();
 
-        if ($save->isFinished()) {
-            $request->validate([
-                'title' => 'required|string|unique:videos,title',
-                'description' => 'required|string',
-                'thumbnail' => 'image|mimes:jpeg,png,jpg|dimensions:ratio=16/9,min_height=720,min_width=1280',
-                'category_id' => 'exists:categories,id'
-            ]);
+            if ($save->isFinished()) {
+                $file = $save->getFile();
+                if (!in_array($file->getMimeType(), ['video/mp4', 'video/x-m4v', 'video/ogg', 'video/webm'])) {
+                    unlink($file);
+                    return response()->json(['errors' => ['video' => ['Invalid video format']]], 422);
+                }
+                $fileName = $file->hashName();
+                $folder = $file->move(Storage::disk('local')->path('/videos'), $fileName)->getPathname();
+                $default = substr($folder, strpos($folder, '../') + 3);
 
-            $file = $save->getFile();
+                $path = [
+                    'default' => $default,
+                    'hls' => Str::uuid()->toString() . '/index.m3u8'
+                ];
 
-            if (in_array($file->getMimeType(), ['video/mp4', 'video/ogg', 'video/webm', 'video/quicktime'])) {
-                unlink($file);
-                return response()->json(['errors' => ['video' => ['Invalid video format']]], 422);
+                $meta = Cache::get($request->upload_token);
+                if (!$meta['thumbnail']) {
+                    $meta['thumbnail'] = FormatterService::preview($default);
+                }
+
+                CreateVideoJob::dispatch($path, $request->user('api')->id, $meta);
+                return response()->json(['data' => [
+                    'progress' => $handler->getPercentageDone(),
+                    'message' => "В ближайшее время видео будет добавлено"
+                ]])->setStatusCode(201);
             }
-            $fileName = $file->hashName();
-            $folder = $file->move(Storage::disk('local')->path('/videos'), $fileName)->getPathname();
-            $default = substr($folder, strpos($folder, '../') + 3);
-
-            $path = [
-                'default' => $default,
-                'hls' => pathinfo($request->file('video'), PATHINFO_FILENAME) . '/index.m3u8'
-            ];
-            $thumbnail = $request->file('thumbnail');
-            $thumbnail ? $thumbnail = $thumbnail->store('previews') : $thumbnail = $this->getPreview($default);
-            CreateVideoJob::dispatch($thumbnail, $path, $request->user('api')->id, $request->except(['video', 'thumbnail']));
 
             return response()->json([
-                'progress' => $handler->getPercentageDone(),
-                'message' => "В ближайшее время видео будет добавлено"
-            ])->setStatusCode(201);
+                'progress' => $handler->getPercentageDone()
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Chunk upload failed', [
+                'message' => $e->getMessage(),
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => collect($e->getTrace())->take(5),
+                'request' => [
+                    'chunk' => $request->resumableChunkNumber ?? null,
+                    'totalChunks' => $request->resumableTotalChunks ?? null,
+                    'identifier' => $request->resumableIdentifier ?? null,
+                    'totalSize' => $request->resumableTotalSize ?? null,
+                ],
+            ]);
+
+            return response()->json([
+                'error' => 'Upload failed',
+                'message' => $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json([
-            'progress' => $handler->getPercentageDone()
-        ]);
     }
 
-    protected function getPreview($file)
-    {
-        $path = 'previews/' . pathinfo($file, PATHINFO_FILENAME) . '.jpeg';
-        FFMpeg::fromDisk('local')
-            ->open($file)
-            ->getFrameFromSeconds(0)
-            ->export()
-            ->toDisk('local')
-            ->save($path);
-        return $path;
-    }
-
+    /**
+     * Playing video
+     * @param $folder
+     * @param $filename
+     * @return \ProtoneMedia\LaravelFFMpeg\Http\DynamicHLSPlaylist
+     */
     public function getVideo($folder, $filename)
     {
         return FFMpeg::dynamicHLSPlaylist('local')
@@ -323,17 +268,38 @@ class VideoController extends Controller
             ->setMediaUrlResolver(function ($filename) use ($folder) {
                 return route("video.file", ["folder" => $folder, "filename" => $filename]);
             })
+            ->setKeyUrlResolver(function ($key) use ($folder) {
+                return route("video.key", ["key" => $key]);
+            })
             ->setPlaylistUrlResolver(function ($filename) use ($folder) {
                 return route("video.playlist", ["folder" => $folder, "filename" => $filename]);
             });
     }
 
+    /**
+     * Get key for private video
+     * @param $key
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
+    public function getKey($key)
+    {
+        abort_if(!auth('api')->check(), 403, 'Forbidden');
+        return Storage::disk('media')->download("keys/$key");
+    }
+
+    /**
+     * Get segments of video
+     * @param $folder
+     * @param $filename
+     * @return string|null
+     */
     public function getFile($folder, $filename)
     {
         return Storage::disk("media")->get("$folder/$filename");
     }
 
     /**
+     * Update info of video
      * @param VideoUpdateRequest $request
      * @param Video $video
      * @return \Illuminate\Http\JsonResponse
@@ -341,18 +307,25 @@ class VideoController extends Controller
     public function update(VideoUpdateRequest $request, Video $video)
     {
         $video->update($request->all());
-        return parent::response($video, 'updated', 'Видео успешно обновлено')->setStatusCode(201, 'Updated');
+        return parent::response($video, 'updated', 'Видео успешно обновлено');
     }
 
     /**
-     * Добавление тега к видео
-     * @param TagAddRequest $request
+     * Add tag in video
      * @param Video $video
      * @param Tag $tag
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store_tag(TagAddRequest $request, Video $video, Tag $tag)
+    public function store_tag(Video $video, Tag $tag)
     {
+        /** Not his video */
+        ApiRequest::action($video, 'add tags', 'to this video');
+
+        /** Tag exists */
+        if ($video->tags->where('tag_id', $tag->id)->first()) {
+            throw new ApiException(402, 'Video already exists this tag');
+        }
+
         TagVideo::create([
             'tag_id' => $tag->id,
             'video_id' => $video->id
@@ -361,14 +334,20 @@ class VideoController extends Controller
     }
 
     /**
-     * Удаление тега у видео
-     * @param TagDeleteRequest $request
+     * Delete tag from video
      * @param Video $video
      * @param Tag $tag
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy_tag(TagDeleteRequest $request, Video $video, Tag $tag)
+    public function destroy_tag(Video $video, Tag $tag)
     {
+        ApiRequest::action($video, 'delete tags', 'from this video');
+
+        /** Tag not exists */
+        if (!$video->tags->where('video_id', $video->id)->where('tag_id', $tag->id)->first()) {
+            throw new ApiException(402, "Tag doesn't exist in this video");
+        }
+
         TagVideo::where([
             'tag_id' => $tag->id,
             'video_id' => $video->id
@@ -378,13 +357,16 @@ class VideoController extends Controller
 
 
     /**
-     * Удаление видео
-     * @param VideoDeleteRequest $request
+     * Delete video
      * @param Video $video
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(VideoDeleteRequest $request, Video $video)
+    public function destroy(Video $video)
     {
+        ApiRequest::action($video, 'delete', 'this video');
+        $disk = Storage::disk('local');
+        $disk->delete([$video->thumbnail, 'videos/' . basename(dirname($video))]);
+        $disk->deleteDirectory('media/' . basename(dirname($video)));
         return parent::delete($video);
     }
 }

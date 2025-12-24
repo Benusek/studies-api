@@ -20,20 +20,15 @@ class UserResource extends JsonResource
             'surname' => $this->surname,
             'patronymic' => $this->patronymic,
             'email' => $this->email,
-            'email_verify' => $this->email_veridied_at,
             'login' => $this->login,
-            'photo_file' => $this->photo_file,
+            'avatar' => $this->photo_file,
             'created' => $this->created_at,
             'role_id' => $this->role->id,
-            'subscribers_count' => $this->subscribers->count(),
-            'subscribers' => $this->subscribers
-                ->map(function ($subscriber) {
-                return ChannelResource::make($subscriber->user);
-            }),
+            'subscribers' => [
+                'items' =>$this->subscribers,
+                'count' => $this->subscribers->count()
+            ],
             'subscribe' => $this->subscribe
-                ->map(function ($subscriber) {
-                return ChannelResource::make($subscriber->user);
-            })
         ];
     }
 }

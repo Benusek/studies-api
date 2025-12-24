@@ -9,26 +9,25 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
 
 class CreateVideoJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $thumbnail;
     protected $path;
     protected $user;
-    protected $other;
+    protected $meta;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($thumbnail, $path, $user, $other)
+    public function __construct($path, $user, $meta)
     {
-        $this->thumbnail = $thumbnail;
         $this->path = $path;
         $this->user = $user;
-        $this->other = $other;
+        $this->meta = $meta;
     }
 
     /**
@@ -36,29 +35,37 @@ class CreateVideoJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $milliseconds = FFMpeg::fromDisk('local')->open($this->path['default'])->getDurationInMiliseconds();
-        $lowBitrate = (new X264)->setKiloBitrate(250);
-        $midBitrate = (new X264)->setKiloBitrate(500);
-        $highBitrate = (new X264)->setKiloBitrate(1000);
-        FFMpeg::fromDisk('local')
-            ->open("{$this->path['default']}")
-            ->exportForHLS()
-            ->addFormat($lowBitrate, function ($media) {
-                $media->scale(640, 360);
-            })
-            ->addFormat($midBitrate, function ($media) {
-                $media->scale(1280, 720);
-            })
-            ->addFormat($highBitrate, function ($media) {
-                $media->scale(1920, 1080);
-            })
-            ->toDisk('media')
-            ->save("{$this->path['hls']}");
-        Video::create([
-                'video' => "uploads/playlist/{$this->path['hls']}",
-                'duration' => $milliseconds,
-                'thumbnail' => $this->thumbnail,
-                'user_id' => $this->user,
-            ] + $this->other);
+        try {
+            $milliseconds = FFMpeg::fromDisk('local')->open($this->path['default'])->getDurationInMiliseconds();
+            $lowBitrate = (new X264)->setKiloBitrate(1000);
+            $midBitrate = (new X264)->setKiloBitrate(2500);
+            $highBitrate = (new X264)->setKiloBitrate(4000);
+
+            $hls = FFMpeg::fromDisk('local')
+                ->open("{$this->path['default']}")
+                ->exportForHLS();
+
+            if (!$this->meta['public']) {
+                $hls->withRotatingEncryptionKey(function ($filename, $contents) {
+                    Storage::disk('media')->put("keys/{$filename}", $contents);
+                });
+            }
+            $hls->addFormat($lowBitrate)
+                ->addFormat($midBitrate)
+                ->addFormat($highBitrate)
+                ->toDisk('media')
+                ->save("{$this->path['hls']}");
+
+
+            Video::create([
+                    'video' => "uploads/playlist/{$this->path['hls']}",
+                    'duration' => $milliseconds,
+                    'user_id' => $this->user,
+                ] + $this->meta);
+//        Storage::disk('local')->delete($this->path['default']);
+        } catch (\Exception $err) {
+            dd($err->getMessage());
+        }
+
     }
 }

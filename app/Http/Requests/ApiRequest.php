@@ -18,8 +18,7 @@ class ApiRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array
      */
     public function rules(): array
     {
@@ -28,17 +27,17 @@ class ApiRequest extends FormRequest
         ];
     }
 
-    public function action(object $object, $method, $obj_message) {
+    public static function action(object $object, $method, $obj_message) {
         //Пользователь не может удалить чужое видео
-        if ($object->user_id !== $this->user('api')->id) {
+        if ($object->user_id !== auth('api')->id()) {
             throw new ApiException(402, "You are not allowed to {$method} {$obj_message}.");
         }
     }
 
-    public function status(object $object, $message_obj, $status)
+    public static function status(object $object, $message_obj, $status)
     {
         //Пользователь не может сменить статус чужого объекта
-        $this->action($object, 'change status', "of this {$message_obj}");
+        ApiRequest::action($object, 'change status', "of this {$message_obj}");
 
         //Пользователь не может менять статус на такой же
         if ($object->public === $status) {
@@ -54,9 +53,9 @@ class ApiRequest extends FormRequest
         }
     }
 
-    public function private($object, $message_obj) {
+    public static function private($object, $message_obj) {
         //Пользователь не может ... чужое приватное ...
-        if ($object->public === 0 && !$this->user('api') || $object->public === 0 && $object->user_id !== $this->user('api')?->id) {
+        if (!$object->public && !auth('api')->user() || !$object->public && $object->user_id !== auth('api')->id()) {
             throw new ApiException(402, "This {$message_obj} is not public");
         }
     }

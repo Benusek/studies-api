@@ -21,7 +21,7 @@ class CommentResource extends JsonResource
             'user' => ChannelResource::make($this->user),
             'text' => $this->text,
             'answers' => AnswerResource::collection($this->comment_answers),
-            'created_at' => $this->created_at
+            'created_at' => $this->created_at->diffForHumans()
         ];
     }
 }

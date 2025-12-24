@@ -41,4 +41,7 @@ return [
             // \Pion\Laravel\ChunkUpload\Handler\DropZoneUploadHandler::class
         ],
     ],
+    'resumable' => [
+        'save' => \Pion\Laravel\ChunkUpload\Save\ChunkSave::class,
+    ],
 ];

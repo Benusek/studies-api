@@ -2,43 +2,52 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\FollowRequest;
-use App\Http\Requests\UnfollowRequest;
+use App\Exceptions\ApiException;
 use App\Models\Subscribe;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class SubscribeController extends Controller
 {
 
     /**
-     * Подписаться на пользователя
-     * @param FollowRequest $request
+     * Subscribe on channel
      * @param User $user
      * @return \Illuminate\Http\JsonResponse
      */
-    public function store(FollowRequest $request, User $user)
+    public function store(User $user)
     {
+        /** User can't subscribe on his channel **/
+        if (auth('api')->id() === $user->id) {
+            throw new ApiException(402, 'You are not allowed to follow yourself.');
+        }
+        /** User can't double subscribe **/
+        if (!empty(auth('api')->user()->subscribe) && auth('api')->user()->subscribe->where('user_id', $user->id)->first()) {
+            throw new ApiException(402, 'You already subscribed to this channel');
+        }
+
         Subscribe::create([
             'user_id' => $user->id,
-            'subscriber_id' => Auth::id()
+            'subscriber_id' => auth('api')->id()
         ]);
-        return parent::response($user, 'follow');
+        return response()->json(['message' => 'Subscribed successfully', 'status' => true]);
     }
 
     /**
-     * Отписаться от пользователя
-     * @param UnfollowRequest $request
+     * Unsubscribe channel
      * @param User $user
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(UnfollowRequest $request, User $user)
+    public function destroy(User $user)
     {
+        /** User can't follow if not follow this channel **/
+        if (auth('api')->check() && !$user->subscribers->contains('id', auth('api')->id())) {
+            throw new ApiException(402, 'You are not following this user.');
+        }
+
         Subscribe::where([
             'user_id' => $user->id,
-            'subscriber_id' => Auth::id()
+            'subscriber_id' => auth('api')->id()
         ])->delete();
-        return parent::response($user, 'unfollow');
+        return response()->json(['message' => 'Unsubscribed successfully', 'status' => true]);
     }
 }

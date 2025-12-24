@@ -71,20 +71,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return in_array($this->role->code, $roles);
     }
 
-    /**
-     * Один пользователь может иметь многих подписчиков
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function subscribers() {
-        return $this->hasMany(Subscribe::class, 'user_id');
+        return $this->belongsToMany(User::class,  'subscribes', 'user_id', 'subscriber_id');
     }
 
-    /**
-     * Один пользователь может быть подписан на многих
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function subscribe() {
-        return $this->hasMany(Subscribe::class, 'subscriber_id');
+        return $this->belongsToMany(User::class, 'subscribes', 'subscriber_id', 'user_id');
     }
 
     /**

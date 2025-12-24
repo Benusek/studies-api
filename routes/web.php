@@ -21,6 +21,7 @@ Route::get('/', function () {
 Route::prefix('uploads')->group(function () {
     Route::get("/playlist/{folder}/{filename}", [VideoController::class, 'getVideo'])->name("video.playlist");
     Route::get("/file/{folder}/{filename}", [VideoController::class, 'getFile'])->name("video.file");
+    Route::get("/key/{key}", [VideoController::class, 'getKey'])->name("video.key");
 });
 
 Route::get('/about', function () {

@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 class AnswerAddRequest extends ApiRequest
 {
     /**
-     * @return bool
+     * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
@@ -15,8 +15,7 @@ class AnswerAddRequest extends ApiRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return string[]
      */
     public function rules(): array
     {

@@ -18,7 +18,7 @@ class AnswerResource extends JsonResource
             'id' => $this->id,
             'user' => ChannelResource::make($this->user),
             'text' => $this->text,
-            'created_at' => $this->created_at
+            'created_at' => $this->created_at->diffForHumans()
         ];
     }
 }

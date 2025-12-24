@@ -2,8 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Http\Controllers\Controller;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,7 +15,6 @@ class VideoResource extends JsonResource
     public function toArray(Request $request): array
     {
         self::$wrap = "videos";
-        Carbon::setLocale('ru');
         return [
             'id' => $this->id,
             'title' => $this->title,

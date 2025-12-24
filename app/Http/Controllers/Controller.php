@@ -11,7 +11,7 @@ class Controller extends BaseController
     use AuthorizesRequests, ValidatesRequests;
 
     /**
-     * Функция для изменения статуса
+     * Change status of model
      * @param $object
      * @param $status
      * @return \Illuminate\Http\JsonResponse
@@ -22,18 +22,18 @@ class Controller extends BaseController
     }
 
     /**
-     * Функция для удаления
+     * Delete
      * @param $object
      * @return \Illuminate\Http\JsonResponse
      */
     public function delete($object)
     {
         $object->delete();
-        return $this->response($object, 'deleted');
+        return $this->response($object, true, 'success');
     }
 
     /**
-     * Функция для вывода ответа
+     * Get response
      * @param $object
      * @param $method
      * @param $message

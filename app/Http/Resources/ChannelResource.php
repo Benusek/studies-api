@@ -17,8 +17,15 @@ class ChannelResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'photo_file' => $this->photo_file,
-            'subscribers_count' => $this->subscribers->count()
+            'avatar' => $this->photo_file,
+            'subscribers' => [
+                'items' => ProfileResource::collection($this->subscribers),
+                'count' => $this->subscribers->count()
+            ],
+            'subscribed' => $this->when(
+                auth('api')->check(),
+                fn () => $this->subscribers->contains('id', auth('api')->id())
+            )
         ];
     }
 }

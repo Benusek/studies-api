@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Exceptions\ApiException;
-use Illuminate\Foundation\Http\FormRequest;
 
 class UserUpdateRequest extends ApiRequest
 {
@@ -12,8 +11,8 @@ class UserUpdateRequest extends ApiRequest
      */
     public function authorize(): bool
     {
-        //Пользователь не может изменить чужие данные
-        if ($this->user->id !== $this->user('api')->id) {
+        /** Other profile */
+        if ($this->user->id !== auth('api')->id()) {
             throw new ApiException(402, "You are not allowed to update this user.");
         }
         return true;
@@ -21,8 +20,7 @@ class UserUpdateRequest extends ApiRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return string[]
      */
     public function rules(): array
     {
