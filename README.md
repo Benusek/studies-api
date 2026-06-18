@@ -1,3 +1,20 @@
+# Installation
+Run the docker compose file build
+```bash
+docker compose up --build
+```
+
+Error: permission denied
+```bash
+docker exec -it studies-php-1 chown -R www-data:www-data /usr/share/nginx/html/storage /usr/share/nginx/html/bootstrap/cache /usr/share/nginx/html/media
+docker exec -it studies-php-1 chmod -R 775 /usr/share/nginx/html/storage /usr/share/nginx/html/bootstrap/cache /usr/share/nginx/html/media
+```
+
+Migrations
+```bash
+docker exec -it studies-php-1 php artisan migrate:refresh --seed
+```
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

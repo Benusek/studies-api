@@ -22,8 +22,11 @@ class VideoUpdateRequest extends ApiRequest
         return [
             'title' => 'string',
             'description' => 'string',
-            'photo_file' => 'image|mimes:jpeg,png,jpg,gif,svg|dimensions:ratio=16/9,min_height=720,min_width=1280',
-            'video_file' => 'video|mimes:mp4,mov,ogg,wmv,flv'
+            'category_id' => 'required|exists:categories,id',
+            'public' => 'required|boolean',
+            'tags' => 'nullable|array',
+            'tags.*' => 'exists:tags,id',
+            'thumbnail' => 'image|mimes:jpeg,png,jpg,gif,svg|dimensions:ratio=16/9,min_height=720,min_width=1280'
         ];
     }
 }

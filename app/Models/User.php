@@ -41,7 +41,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at',
         'patronymic',
         'surname',
-        'photo_file',
         'remember_token',
         'updated_at',
         'created_at',
@@ -101,15 +100,6 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function other_playlists() {
         return $this->hasMany(UserPlaylist::class);
-    }
-
-    /**
-     * Один пользователь может отправить множество жалоб
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function reports()
-    {
-        return $this->hasMany(ReportVideo::class);
     }
 
     public function generateToken()

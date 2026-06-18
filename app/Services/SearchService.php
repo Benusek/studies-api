@@ -12,14 +12,28 @@ class SearchService
     {
         return Video::query()
             ->where('public', true)
-            ->when($request->get('str'), fn($q) => $q->where('title', 'LIKE', "%{$request->get('str')}%")
-                ->orWhereHas('user', fn($u) => $u->where('name', 'LIKE', "%{$request->get('str')}%")
-                )
-            )
-            ->when($request->categories, fn($q) => $q->whereIn('category_id', $request->categories)
-            )
-            ->when($request->tags, fn($q) => $q->whereHas('tags', fn($t) => $t->whereIn('tags.id', $request->tags))
-            )
+
+            ->when($request->filled('str'), function ($q) use ($request) {
+                $q->where(function ($query) use ($request) {
+                    $query->where('title', 'LIKE', "%{$request->str}%")
+                        ->orWhereHas('user', function ($user) use ($request) {
+                            $user->where('name', 'LIKE', "%{$request->str}%");
+                        });
+                });
+            })
+
+            ->when(!empty($request->categories), function ($q) use ($request) {
+                $q->whereIn('category_id', $request->categories);
+            })
+
+            ->when(!empty($request->tags), function ($q) use ($request) {
+                $tags = (array) $request->tags;
+
+                $q->whereHas('tags', function ($tag) use ($tags) {
+                    $tag->whereIn('tags.id', $tags);
+                });
+            })
+
             ->with(['user', 'tags']);
     }
 
@@ -28,9 +42,25 @@ class SearchService
         return Playlist::query()
             ->where('public', true)
             ->whereHas('videos')
-            ->when($request->get('str'), fn($q) => $q->where('title', 'LIKE', "%{$request->get('str')}%"))
-            ->when($request->categories, fn($q) => $q->whereHas('videos', fn($v) => $v->whereIn('category_id', $request->categories)))
-            ->when($request->tags, fn($q) => $q->whereHas('videos.tags', fn($t) => $t->whereIn('tags.id', $request->tags)))
+
+            ->when($request->filled('str'), function ($q) use ($request) {
+                $q->where('title', 'LIKE', "%{$request->str}%");
+            })
+
+            ->when(!empty($request->categories), function ($q) use ($request) {
+                $q->whereHas('videos', function ($video) use ($request) {
+                    $video->whereIn('category_id', $request->categories);
+                });
+            })
+
+            ->when(!empty($request->tags), function ($q) use ($request) {
+                $tags = (array) $request->tags;
+
+                $q->whereHas('videos.tags', function ($tag) use ($tags) {
+                    $tag->whereIn('tags.id', $tags);
+                });
+            })
+
             ->withCount('videos');
     }
 }

@@ -23,7 +23,9 @@ class VideoResource extends JsonResource
             'thumbnail' => $this->thumbnail,
             'video' => $this->video,
             'duration' => $this->duration,
+            'category' => $this->category,
             'user' => ChannelResource::make($this->user),
+            'tags' => TagResource::collection($this->tags),
             'created_at' => $this->created_at->diffForHumans()
         ];
     }

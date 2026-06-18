@@ -2,52 +2,56 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Default Filesystem Disk
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify the default filesystem disk that should be used
-    | by the framework. The "local" disk, as well as a variety of cloud
-    | based disks are available to your application. Just store away!
-    |
-    */
-
-    'default' => env('FILESYSTEM_DISK', 'local'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Filesystem Disks
-    |--------------------------------------------------------------------------
-    |
-    | Here you may configure as many filesystem "disks" as you wish, and you
-    | may even configure multiple disks of the same driver. Defaults have
-    | been set up for each driver as an example of the required values.
-    |
-    | Supported Drivers: "local", "ftp", "sftp", "s3"
-    |
-    */
+    'default' => env('FILESYSTEM_DISK', 'public'),
 
     'disks' => [
+
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('..'),
+            'root' => storage_path('app'),
             'throw' => false,
         ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
+
+        'avatars' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/avatars'),
+            'url' => env('APP_URL') . '/storage/avatars',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        'videos' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/videos'),
+            'url' => env('APP_URL') . '/storage/videos',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        'previews' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/previews'),
+            'url' => env('APP_URL') . '/storage/previews',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
         'media' => [
             'driver' => 'local',
-            'root' => public_path('media'),
-            'url' => env('APP_URL').'/media',
+            'root' => storage_path('app/public/media'),
+            'url' => env('APP_URL') . '/storage/media',
             'visibility' => 'public',
             'throw' => false,
         ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
@@ -62,23 +66,10 @@ return [
 
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Symbolic Links
-    |--------------------------------------------------------------------------
-    |
-    | Here you may configure the symbolic links that will be created when the
-    | `storage:link` Artisan command is executed. The array keys should be
-    | the locations of the links and the values should be their targets.
-    |
-    */
-
     'links' => [
-        //public_path('storage') => storage_path('app/public'),
-        public_path('avatars') => storage_path('../avatars'),
-        public_path('videos') => storage_path('../videos'),
-        public_path('previews') => storage_path('../previews'),
-        public_path('media') => storage_path('../media'),
+
+        public_path('storage') => storage_path('app/public'),
+
     ],
 
 ];

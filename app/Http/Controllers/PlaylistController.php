@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PlaylistAddRequest;
 use App\Http\Requests\PlaylistUpdateRequest;
+use App\Http\Resources\ChannelResource;
 use App\Http\Resources\PlaylistResource;
+use App\Http\Resources\VideoResource;
 use App\Models\Playlist;
 use App\Models\PlaylistVideo;
 use App\Models\User;
 use App\Models\UserPlaylist;
 use App\Models\Video;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,7 +27,14 @@ class PlaylistController extends Controller
     public function store(PlaylistAddRequest $request)
     {
         $playlist = Playlist::create(['user_id' => Auth::id()] + $request->all());
-        return parent::response($playlist, 'created');
+        return parent::response($playlist, 'created', 'Плейлист успешно создан!');
+    }
+
+    public function show_videos(Playlist $playlist) {
+        return response()->json([
+            'videos'=> VideoResource::collection($playlist->videos()->get()),
+            'playlist' => PlaylistResource::make($playlist)
+        ]);
     }
 
     /**
@@ -54,22 +64,27 @@ class PlaylistController extends Controller
 
     /**
      * Get user's playlists
-     * @param Request $request
      * @param User $user
-     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     * @return JsonResponse
      */
     public function show(User $user)
     {
         /** Get my **/
         if (auth('api')->user() && auth('api')->id() === $user->id) {
-            return PlaylistResource::collection(auth('api')->user()->playlists);
+            return response()->json([
+                'user' => ChannelResource::make($user),
+                'playlists' => PlaylistResource::collection($user->playlists)
+            ]);
         }
-
         /** Get other **/
-        return PlaylistResource::collection(Playlist::where([
-            'user_id' => $user->id,
-            'public' => 1
-        ])->get());
+        return response()->json([
+            'user' => ChannelResource::make($user),
+            'playlists' => PlaylistResource::collection(Playlist::where([
+                'user_id' => $user->id,
+                'public' => 1
+            ])->get())]);
+
+
     }
 
     /**

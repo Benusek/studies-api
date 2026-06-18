@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('playlists', function (Blueprint $table) {
             $table->id();
-            $table->string('title')->unique();
+            $table->string('title');
             $table->string('description')->nullable();
             $table->boolean('public')->default(false);
             $table->foreignId('user_id')->references('id')->on('users')->onDelete('cascade');

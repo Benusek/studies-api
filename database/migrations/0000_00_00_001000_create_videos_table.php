@@ -14,13 +14,13 @@ return new class extends Migration
         Schema::create('videos', function (Blueprint $table) {
             $table->id();
             $table->string('title')->unique();
-            $table->string('description');
+            $table->text('description');
             $table->string('thumbnail')->nullable();
             $table->string('video');
             $table->integer('duration');
             $table->boolean('public')->default(true);
             $table->foreignId('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreignId('category_id')->default(11)->references('id')->on('categories')->onDelete('cascade');
+            $table->foreignId('category_id')->default(1)->references('id')->on('categories')->onDelete('cascade');
             $table->timestamps();
         });
     }

@@ -18,7 +18,8 @@ class RecommendationService
 
     protected static function build(Video $video)
     {
-        $tags = $video->tags()->pluck('id');
+        $tags = $video->tags()->pluck('tags.id');
+
         $base = Video::query()
             ->where('id', '!=', $video->id)
             ->where('public', true)
@@ -30,7 +31,14 @@ class RecommendationService
         return Video::query()
             ->fromSub($base, 'videos')
             ->selectRaw(
-                'videos.*, ((category_id = ?) * 3 + (user_id = ?) * 1 + (matched_tags_count * 2)) as score',
+                '
+                videos.*,
+                (
+                    (category_id = ?) * 3 +
+                    (user_id = ?) * 1 +
+                    (matched_tags_count * 2)
+                ) as score
+                ',
                 [$video->category_id, $video->user_id]
             )
             ->orderByDesc('score')

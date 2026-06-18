@@ -39,6 +39,8 @@ Route::withoutMiddleware('auth:api')->group(function () {
         Route::get('/{video}/recommendation', [VideoController::class, 'recommendation']);
     });
 
+    Route::get('/playlist/{playlist}', [PlaylistController::class, 'show_videos']);
+
     Route::prefix('user')->group(function () {
         Route::get('/{user}/videos', [VideoController::class, 'show']);
         Route::get('/{user}/playlist', [PlaylistController::class, 'show']);

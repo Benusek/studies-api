@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Exceptions\ApiException;
 use App\Http\Requests\ApiRequest;
 use App\Http\Requests\SearchRequest;
@@ -83,25 +82,63 @@ class VideoController extends Controller
      */
     public function search(SearchRequest $request, int $start, int $count)
     {
-        $videos = SearchService::video($request)->paginate($count, ['*'], 'page', $start);
-        $playlists = SearchService::playlist($request)->paginate($count, ['*'], 'page', $start);
+        $videosQuery = SearchService::video($request);
+        $playlistsQuery = SearchService::playlist($request);
+
         return match ($request->type) {
-            'video' => VideoResource::collection($videos)
-                ->additional(['count' => $videos->total()]),
-            'playlist' => PlaylistResource::collection($playlists)
-                ->additional(['count' => $playlists->total()]),
+
+            'video' => response()->json([
+                'videos' => [
+                    'items' => VideoResource::collection(
+                        $videosQuery
+                            ->skip($start)
+                            ->take($count)
+                            ->get()
+                    ),
+                    'count' => $videosQuery->count(),
+                ],
+            ]),
+
+            'playlist' => response()->json([
+                'playlists' => [
+                    'items' => PlaylistResource::collection(
+                        $playlistsQuery
+                            ->skip($start)
+                            ->take($count)
+                            ->get()
+                    ),
+                    'count' => $playlistsQuery->count(),
+                ],
+            ]),
+
             'all' => response()->json([
                 'videos' => [
-                    'items' => VideoResource::collection($videos),
-                    'count' => $videos->total(),
+                    'items' => VideoResource::collection(
+                        $videosQuery
+                            ->skip($start)
+                            ->take($count)
+                            ->get()
+                    ),
+                    'count' => $videosQuery->count(),
                 ],
+
                 'playlists' => [
-                    'items' => PlaylistResource::collection($playlists),
-                    'count' => $playlists->total(),
+                    'items' => PlaylistResource::collection(
+                        $playlistsQuery
+                            ->skip($start)
+                            ->take($count)
+                            ->get()
+                    ),
+                    'count' => $playlistsQuery->count(),
                 ],
-                'count' => $videos->total() + $playlists->total(),
+
+                'count' => $videosQuery->count() + $playlistsQuery->count(),
             ]),
-            default => throw new ApiException(404, 'Unknown search type'),
+
+            default => throw new ApiException(
+                404,
+                'Unknown search type'
+            ),
         };
     }
 
@@ -172,7 +209,9 @@ class VideoController extends Controller
         $request->validate([
             'title' => 'required|string|unique:videos,title',
             'description' => 'required|string',
-            'thumbnail' => 'image|mimes:jpeg,png,jpg|dimensions:ratio=16/9,min_height=720,min_width=1280',
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['exists:tags,id'],
+            'thumbnail' => 'required|image|mimes:jpeg,png,jpg|dimensions:ratio=16/9,min_height=720,min_width=1280',
             'category_id' => 'exists:categories,id'
         ]);
 
@@ -184,6 +223,7 @@ class VideoController extends Controller
             'title' => $request->title,
             'description' => $request->description,
             'thumbnail' => $thumbnail,
+            'tags' => $request->tags,
             'category_id' => $request->category_id,
             'public' => $request->public,
         ], now()->addMinutes(30));
@@ -205,29 +245,45 @@ class VideoController extends Controller
 
             if ($save->isFinished()) {
                 $file = $save->getFile();
-                if (!in_array($file->getMimeType(), ['video/mp4', 'video/x-m4v', 'video/ogg', 'video/webm'])) {
-                    unlink($file);
-                    return response()->json(['errors' => ['video' => ['Invalid video format']]], 422);
+                if (!in_array($file->getMimeType(), [
+                    'video/mp4',
+                    'video/x-m4v',
+                    'video/ogg',
+                    'video/webm'
+                ])) {
+                    if ($file->getRealPath()) {
+                        unlink($file->getRealPath());
+                    }
+                    return response()->json([
+                        'errors' => [
+                            'video' => ['Invalid video format']
+                        ]
+                    ], 422);
                 }
-                $fileName = $file->hashName();
-                $folder = $file->move(Storage::disk('local')->path('/videos'), $fileName)->getPathname();
-                $default = substr($folder, strpos($folder, '../') + 3);
 
+                $filename = $file->hashName();
+                $original = $file->storeAs(
+                    'originals',
+                    $filename,
+                    'videos'
+                );
                 $path = [
-                    'default' => $default,
-                    'hls' => Str::uuid()->toString() . '/index.m3u8'
+                    'original' => $original,
+                    'hls' => 'hls/' . Str::uuid(),
                 ];
-
                 $meta = Cache::get($request->upload_token);
-                if (!$meta['thumbnail']) {
-                    $meta['thumbnail'] = FormatterService::preview($default);
-                }
+                if (empty($meta['thumbnail'])) {
+                    $meta['thumbnail'] =
+                        FormatterService::preview($original);
 
-                CreateVideoJob::dispatch($path, $request->user('api')->id, $meta);
-                return response()->json(['data' => [
-                    'progress' => $handler->getPercentageDone(),
-                    'message' => "В ближайшее время видео будет добавлено"
-                ]])->setStatusCode(201);
+                }
+                CreateVideoJob::dispatch( $path, $request->user('api')->id, $meta);
+
+                return response()->json([
+                    'data' => [
+                        'message' => 'Видео отправлено в обработку'
+                    ]
+                ], 201);
             }
 
             return response()->json([
@@ -306,9 +362,40 @@ class VideoController extends Controller
      */
     public function update(VideoUpdateRequest $request, Video $video)
     {
-        $video->update($request->all());
-        return parent::response($video, 'updated', 'Видео успешно обновлено');
+        $data = $request->validated();
+
+        if ($request->hasFile('thumbnail')) {
+
+            if ($video->thumbnail) {
+                Storage::disk('local')->delete($video->thumbnail);
+            }
+
+            $data['thumbnail'] = $request
+                ->file('thumbnail')
+                ->store('previews');
+        }
+
+        unset($data['tags']);
+
+        $video->update($data);
+
+        if ($request->has('tags')) {
+            $video->tags()->sync($request->input('tags'));
+        }
+
+        $video->load([
+            'category',
+            'tags',
+            'user'
+        ]);
+
+        return parent::response(
+            $video,
+            'updated',
+            'Видео успешно обновлено'
+        );
     }
+
 
     /**
      * Add tag in video
@@ -364,8 +451,8 @@ class VideoController extends Controller
     public function destroy(Video $video)
     {
         ApiRequest::action($video, 'delete', 'this video');
-        $disk = Storage::disk('local');
-        $disk->delete([$video->thumbnail, 'videos/' . basename(dirname($video))]);
+        $disk = Storage::disk('public');
+        $disk->delete([$video->thumbnail,'videos/' . basename(dirname($video))]);
         $disk->deleteDirectory('media/' . basename(dirname($video)));
         return parent::delete($video);
     }

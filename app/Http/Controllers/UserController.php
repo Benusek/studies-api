@@ -94,12 +94,26 @@ class UserController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(UserUpdateRequest $request, User $user)
-    {
-        if ($user->avatar) {
-            Storage::delete($user->avatar);
+{
+    $data = $request->validated();
+
+    if ($request->hasFile('photo_file')) {
+
+        if ($user->photo_file) {
+            Storage::delete($user->photo_file);
         }
 
-        $user->update(['avatar' => $request->avatar ? $request->avatar->store('avatars') : $user->avatar] + request()->all());
-        return parent::response($user, 'updated', 'Данные успешно обновлены');
+        $data['photo_file'] = $request
+            ->file('photo_file')
+            ->store('avatars', 'local');
     }
+
+    $user->update($data);
+
+    return parent::response(
+        $user->fresh(),
+        'updated',
+        'Данные успешно обновлены'
+    );
+}
 }

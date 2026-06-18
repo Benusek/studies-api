@@ -21,8 +21,8 @@ class UserResource extends JsonResource
             'patronymic' => $this->patronymic,
             'email' => $this->email,
             'login' => $this->login,
-            'avatar' => $this->photo_file,
-            'created' => $this->created_at,
+            'photo_file' => $this->photo_file,
+            'created' => $this->created_at->diffForHumans(),
             'role_id' => $this->role->id,
             'subscribers' => [
                 'items' =>$this->subscribers,

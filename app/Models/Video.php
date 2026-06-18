@@ -19,9 +19,10 @@ class Video extends Model
         'video',
         'duration',
         'user_id',
-        'public'
+        'public',
+        'category_id'
     ];
-    
+
     /**
      * Множество видео могут быть опубликованы одним пользователем
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -33,11 +34,16 @@ class Video extends Model
 
     /**
      * Одно видео может иметь множество тегов
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
     public function tags()
     {
-        return $this->hasMany(TagVideo::class);
+        return $this->belongsToMany(
+            Tag::class,
+            'tag_videos',
+            'video_id',
+            'tag_id'
+        );
     }
 
     /**
@@ -46,14 +52,6 @@ class Video extends Model
      */
     public function comments() {
         return $this->hasMany(Comment::class);
-    }
-
-    /**
-     * Одно видео может иметь множество жалоб
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function reports() {
-        return $this->hasMany(ReportVideo::class);
     }
 
     /**
