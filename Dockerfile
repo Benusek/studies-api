@@ -4,15 +4,17 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     curl \
+    ffmpeg \
     libzip-dev \
     libpng-dev \
     libjpeg62-turbo-dev \
-    libfreetype6-dev \
-    ffmpeg \
-    && docker-php-ext-configure gd \
+    libfreetype6-dev
+
+RUN docker-php-ext-configure gd \
         --with-freetype \
-        --with-jpeg \
-    && docker-php-ext-install \
+        --with-jpeg
+
+RUN docker-php-ext-install \
         pdo_mysql \
         bcmath \
         exif \
@@ -20,13 +22,8 @@ RUN apt-get update && apt-get install -y \
         zip \
         gd
 
-RUN sed -i 's|listen = 127.0.0.1:9000|listen = 9000|' \
-    /usr/local/etc/php-fpm.d/www.conf
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/backend
-
-CMD ["php artisan migrate --force"]
-CMD ["php artisan db:seed --force"]
-CMD ["php artisan storage:link"]
 
 CMD ["php-fpm"]
